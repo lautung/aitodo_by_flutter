@@ -21,7 +21,10 @@
       "Bash(cd D:/projects/AiTODO && flutter analyze lib/services/speech_service.dart 2>&1)",
       "mcp__fetch__fetch",
       "Bash(flutter test:*)",
-      "Bash(flutter run:*)"
+      "Bash(flutter run:*)",
+      "Bash(flutter pub:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs"
     ]
   }
 }
