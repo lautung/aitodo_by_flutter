@@ -164,7 +164,6 @@ void main() {
       await provider.addTask(title: task2.title);
 
       final task1Id = provider.allTasks[0].id;
-      final task2Id = provider.allTasks[1].id;
 
       // 更新 task2 的前置任务
       final updatedTask2 = provider.allTasks[1].copyWith(

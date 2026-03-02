@@ -3,8 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ai_todo/models/sync_data.dart';
 import 'package:ai_todo/models/task.dart';
-import 'package:ai_todo/models/task_group.dart';
-import 'package:ai_todo/models/task_enums.dart';
 import 'package:ai_todo/services/local_sync_provider.dart';
 
 void main() {
@@ -148,20 +146,6 @@ void main() {
     });
 
     test('sync saves data successfully', () async {
-      final syncData = SyncData(
-        tasks: [
-          Task(
-            id: '1',
-            title: 'Test',
-            createdAt: DateTime.now(),
-          ),
-        ],
-        deletedTasks: [],
-        taskGroups: [],
-        tags: [],
-        lastModified: DateTime.now(),
-      );
-
       // Skip this test in unit test environment due to file system limitations
       // In integration tests, this would work properly
     });
@@ -169,7 +153,7 @@ void main() {
     test('fetchRemoteData returns null when no data', () async {
       final data = await syncProvider.fetchRemoteData();
       // 首次调用可能返回 null（取决于之前是否有数据）
-      expect(data == null || data is SyncData, true);
+      expect(data == null, true);
     });
   });
 }

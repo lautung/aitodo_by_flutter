@@ -74,11 +74,6 @@ void main() {
       // 修改第一个实例
       await provider1.setDailySummaryEnabled(false);
 
-      // 创建新的实例应该能读取到之前的设置
-      final provider2 = NotificationSettingsProvider();
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      // provider2 应该读取到初始设置（因为 setMockInitialValues 只在 setUp 中调用）
       // 实际持久化测试需要在真实环境中运行
     });
   });

@@ -5,7 +5,6 @@ enum PomodoroState { idle, working, shortBreak, longBreak }
 
 class PomodoroProvider extends ChangeNotifier {
   Timer? _timer;
-  int _remainingSeconds = 25 * 60; // 默认25分钟
   PomodoroState _state = PomodoroState.idle;
   int _completedPomodoros = 0;
   String? _currentTaskId;
@@ -16,21 +15,20 @@ class PomodoroProvider extends ChangeNotifier {
   int longBreakDuration = 15 * 60; // 15分钟
   int pomodorosUntilLongBreak = 4;
 
-  int get remainingSeconds => _remainingSeconds;
-  set remainingSeconds(int value) => _remainingSeconds = value;
+  int remainingSeconds = 25 * 60;
   PomodoroState get state => _state;
   int get completedPomodoros => _completedPomodoros;
   String? get currentTaskId => _currentTaskId;
 
   String get timeDisplay {
-    final minutes = _remainingSeconds ~/ 60;
-    final seconds = _remainingSeconds % 60;
+    final minutes = remainingSeconds ~/ 60;
+    final seconds = remainingSeconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   double get progress {
     final total = _getTotalSeconds();
-    return 1 - (_remainingSeconds / total);
+    return 1 - (remainingSeconds / total);
   }
 
   int _getTotalSeconds() {
@@ -49,21 +47,21 @@ class PomodoroProvider extends ChangeNotifier {
   void startWork({String? taskId}) {
     _currentTaskId = taskId;
     _state = PomodoroState.working;
-    _remainingSeconds = workDuration;
+    remainingSeconds = workDuration;
     _startTimer();
     notifyListeners();
   }
 
   void startShortBreak() {
     _state = PomodoroState.shortBreak;
-    _remainingSeconds = shortBreakDuration;
+    remainingSeconds = shortBreakDuration;
     _startTimer();
     notifyListeners();
   }
 
   void startLongBreak() {
     _state = PomodoroState.longBreak;
-    _remainingSeconds = longBreakDuration;
+    remainingSeconds = longBreakDuration;
     _startTimer();
     notifyListeners();
   }
@@ -81,7 +79,7 @@ class PomodoroProvider extends ChangeNotifier {
   void reset() {
     _timer?.cancel();
     _state = PomodoroState.idle;
-    _remainingSeconds = workDuration;
+    remainingSeconds = workDuration;
     _currentTaskId = null;
     notifyListeners();
   }
@@ -94,8 +92,8 @@ class PomodoroProvider extends ChangeNotifier {
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_remainingSeconds > 0) {
-        _remainingSeconds--;
+      if (remainingSeconds > 0) {
+        remainingSeconds--;
         notifyListeners();
       } else {
         _timer?.cancel();
@@ -120,7 +118,7 @@ class PomodoroProvider extends ChangeNotifier {
     } else {
       // 休息结束后回到空闲
       _state = PomodoroState.idle;
-      _remainingSeconds = workDuration;
+      remainingSeconds = workDuration;
       notifyListeners();
     }
   }
