@@ -28,6 +28,7 @@ class TaskProvider extends ChangeNotifier {
   TaskFilter _filter = TaskFilter.all;
   TaskCategory? _categoryFilter;
   String? _groupFilter; // 分组筛选
+  String? _tagFilter; // 标签筛选
   String _searchQuery = '';
   TaskSortType _sortType = TaskSortType.createdTime;
   bool _sortAscending = false;
@@ -40,6 +41,7 @@ class TaskProvider extends ChangeNotifier {
   TaskFilter get filter => _filter;
   TaskCategory? get categoryFilter => _categoryFilter;
   String? get groupFilter => _groupFilter;
+  String? get tagFilter => _tagFilter;
   String get searchQuery => _searchQuery;
   TaskSortType get sortType => _sortType;
   bool get sortAscending => _sortAscending;
@@ -305,6 +307,7 @@ class TaskProvider extends ChangeNotifier {
     String? parentId,
     List<String> customTagIds = const [],
     DateTime? reminderTime,
+    List<String> prerequisiteIds = const [],
   }) async {
     final task = Task(
       id: _uuid.v4(),
@@ -318,6 +321,7 @@ class TaskProvider extends ChangeNotifier {
       repeatType: repeatType,
       parentId: parentId,
       customTagIds: customTagIds,
+      prerequisiteIds: prerequisiteIds,
     );
 
     _tasks.add(task);
@@ -395,11 +399,16 @@ class TaskProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> toggleTaskCompletion(String id) async {
+  Future<bool> toggleTaskCompletion(String id) async {
     final index = _tasks.indexWhere((t) => t.id == id);
     if (index != -1) {
       final task = _tasks[index];
       final willComplete = !task.isCompleted;
+
+      // 如果是要完成，检查前置任务是否都已完成
+      if (willComplete && !canCompleteTask(id)) {
+        return false;
+      }
 
       final updatedTask = task.copyWith(
         isCompleted: willComplete,
@@ -421,7 +430,9 @@ class TaskProvider extends ChangeNotifier {
       }
 
       notifyListeners();
+      return true;
     }
+    return false;
   }
 
   Future<void> replaceAllTasks(
@@ -499,6 +510,11 @@ class TaskProvider extends ChangeNotifier {
         case RepeatType.yearly:
           nextDueDate = _addYearsKeepingDay(originalTask.dueDate!, 1);
           break;
+        case RepeatType.custom:
+          if (originalTask.customRepeat != null) {
+            nextDueDate = originalTask.customRepeat!.getNextDate(originalTask.dueDate!);
+          }
+          break;
         case RepeatType.none:
           break;
       }
@@ -516,6 +532,7 @@ class TaskProvider extends ChangeNotifier {
       parentId: originalTask.id,
       customTagIds: originalTask.customTagIds,
       reminderTime: _nextReminderTime(originalTask, nextDueDate),
+      customRepeat: originalTask.customRepeat,
     );
 
     _tasks.add(nextTask);
@@ -580,9 +597,64 @@ class TaskProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 设置标签筛选
+  void setTagFilter(String? tagId) {
+    _tagFilter = tagId;
+    notifyListeners();
+  }
+
   void setSearchQuery(String query) {
     _searchQuery = query;
     notifyListeners();
+  }
+
+  /// 获取指定标签的任务
+  List<Task> getTasksByTag(String tagId) {
+    return _tasks.where((t) => t.customTagIds.contains(tagId)).toList();
+  }
+
+  /// 获取指定多个标签的任务（任一匹配）
+  List<Task> getTasksByTags(List<String> tagIds) {
+    if (tagIds.isEmpty) return [];
+    return _tasks.where((t) => t.customTagIds.any((tagId) => tagIds.contains(tagId))).toList();
+  }
+
+  /// 获取指定多个标签的任务（全部匹配）
+  List<Task> getTasksByAllTags(List<String> tagIds) {
+    if (tagIds.isEmpty) return _tasks;
+    return _tasks.where((t) => tagIds.every((tagId) => t.customTagIds.contains(tagId))).toList();
+  }
+
+  // ============= Task Dependencies =============
+
+  /// 检查任务是否可完成（所有前置任务都已完成）
+  bool canCompleteTask(String taskId) {
+    final task = getTaskById(taskId);
+    if (task == null) return false;
+    if (task.prerequisiteIds.isEmpty) return true;
+
+    for (final prereqId in task.prerequisiteIds) {
+      final prereqTask = getTaskById(prereqId);
+      if (prereqTask == null || !prereqTask.isCompleted) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /// 获取任务的前置任务列表
+  List<Task> getPrerequisiteTasks(String taskId) {
+    final task = getTaskById(taskId);
+    if (task == null) return [];
+    return task.prerequisiteIds
+        .map((id) => getTaskById(id))
+        .whereType<Task>()
+        .toList();
+  }
+
+  /// 获取依赖该任务的任务列表
+  List<Task> getDependentTasks(String taskId) {
+    return _tasks.where((t) => t.prerequisiteIds.contains(taskId)).toList();
   }
 
   void setSortType(TaskSortType sortType) {
@@ -618,6 +690,11 @@ class TaskProvider extends ChangeNotifier {
     // Apply group filter
     if (_groupFilter != null) {
       result = result.where((t) => t.groupId == _groupFilter).toList();
+    }
+
+    // Apply tag filter
+    if (_tagFilter != null) {
+      result = result.where((t) => t.customTagIds.contains(_tagFilter)).toList();
     }
 
     // Apply search filter

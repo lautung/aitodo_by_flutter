@@ -159,8 +159,23 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       children: [
                         Checkbox(
                           value: _task.isCompleted,
-                          onChanged: (_) {
-                            context.read<TaskProvider>().toggleTaskCompletion(_task.id);
+                          onChanged: (_) async {
+                            final provider = context.read<TaskProvider>();
+                            if (!_task.isCompleted && !provider.canCompleteTask(_task.id)) {
+                              // 显示前置任务未完成的提示
+                              final prereqs = provider.getPrerequisiteTasks(_task.id);
+                              final pendingPrereqs = prereqs.where((t) => !t.isCompleted).toList();
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('请先完成前置任务: ${pendingPrereqs.map((t) => t.title).join(", ")}'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+                            await provider.toggleTaskCompletion(_task.id);
+                            if (!mounted) return;
                             Navigator.pop(context);
                           },
                         ),
@@ -229,6 +244,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       _task.repeatType.label,
                       null,
                     ),
+                    if (_task.prerequisiteIds.isNotEmpty) ...[
+                      const Divider(),
+                      _buildPrerequisiteRow(),
+                    ],
                   ],
                 ),
               ),
@@ -354,6 +373,159 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildPrerequisiteRow() {
+    final provider = context.read<TaskProvider>();
+    final prereqs = provider.getPrerequisiteTasks(_task.id);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.link, size: 20, color: Colors.grey[600]),
+              const SizedBox(width: 12),
+              Text(
+                '前置任务',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.add, size: 20),
+                onPressed: () => _showPrerequisiteSelector(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+          if (prereqs.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...prereqs.map((prereq) => Padding(
+              padding: const EdgeInsets.only(left: 32, bottom: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    prereq.isCompleted ? Icons.check_circle : Icons.pending,
+                    size: 16,
+                    color: prereq.isCompleted ? Colors.green : Colors.orange,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      prereq.title,
+                      style: TextStyle(
+                        decoration: prereq.isCompleted ? TextDecoration.lineThrough : null,
+                        color: prereq.isCompleted ? Colors.grey : null,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 16),
+                    onPressed: () => _removePrerequisite(prereq.id),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            )),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showPrerequisiteSelector() {
+    final provider = context.read<TaskProvider>();
+    final allTasks = provider.allTasks;
+    // 过滤掉自己和非已完成的任务
+    final availableTasks = allTasks
+        .where((t) => t.id != _task.id && !_task.prerequisiteIds.contains(t.id))
+        .toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.3,
+          maxChildSize: 0.8,
+          expand: false,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    '选择前置任务',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: availableTasks.isEmpty
+                      ? Center(
+                          child: Text(
+                            '没有可用的任务',
+                            style: TextStyle(color: Colors.grey[500]),
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: scrollController,
+                          itemCount: availableTasks.length,
+                          itemBuilder: (context, index) {
+                            final task = availableTasks[index];
+                            return ListTile(
+                              leading: Icon(
+                                task.isCompleted ? Icons.check_circle : Icons.pending,
+                                color: task.isCompleted ? Colors.green : Colors.orange,
+                              ),
+                              title: Text(task.title),
+                              subtitle: task.description != null
+                                  ? Text(
+                                      task.description!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    )
+                                  : null,
+                              onTap: () {
+                                _addPrerequisite(task.id);
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _addPrerequisite(String prerequisiteId) {
+    final updatedPrerequisites = List<String>.from(_task.prerequisiteIds)..add(prerequisiteId);
+    setState(() {
+      _task = _task.copyWith(prerequisiteIds: updatedPrerequisites);
+    });
+    _saveTask();
+  }
+
+  void _removePrerequisite(String prerequisiteId) {
+    final updatedPrerequisites = _task.prerequisiteIds.where((id) => id != prerequisiteId).toList();
+    setState(() {
+      _task = _task.copyWith(prerequisiteIds: updatedPrerequisites);
+    });
+    _saveTask();
   }
 
   Widget _buildSubtaskItem(SubTask subtask) {

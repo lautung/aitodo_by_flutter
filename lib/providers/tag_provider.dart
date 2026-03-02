@@ -68,6 +68,20 @@ class TagProvider extends ChangeNotifier {
     }
   }
 
+  /// 更新标签颜色
+  Future<void> updateTagColor(String id, Color newColor) async {
+    final index = _tags.indexWhere((t) => t.id == id);
+    if (index != -1) {
+      _tags[index] = CustomTag(
+        id: id,
+        name: _tags[index].name,
+        color: newColor,
+      );
+      await _saveTags();
+      notifyListeners();
+    }
+  }
+
   Future<void> deleteTag(String id) async {
     _tags.removeWhere((t) => t.id == id);
     await _saveTags();

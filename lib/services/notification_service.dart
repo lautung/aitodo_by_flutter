@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
@@ -129,5 +130,87 @@ class NotificationService {
   Future<void> cancelAllReminders() async {
     await initialize();
     await _notifications.cancelAll();
+  }
+
+  // ============= 每日总结通知 =============
+
+  static const int _dailySummaryNotificationId = 999999;
+
+  /// 调度每日总结通知
+  Future<void> scheduleDailySummary(TimeOfDay time, int pendingCount, {List<String>? taskTitles}) async {
+    await initialize();
+
+    // 取消已存在的每日总结通知
+    await _notifications.cancel(_dailySummaryNotificationId);
+
+    // 构建通知内容
+    final String body;
+    if (taskTitles != null && taskTitles.isNotEmpty) {
+      final taskList = taskTitles.take(5).map((t) => '• $t').join('\n');
+      final moreText = taskTitles.length > 5 ? '\n...还有 ${taskTitles.length - 5} 个任务' : '';
+      body = '您有 $pendingCount 个待办任务：\n$taskList$moreText';
+    } else {
+      body = '您有 $pendingCount 个待办任务';
+    }
+
+    // 计算下一次的提醒时间
+    final now = DateTime.now();
+    var scheduledDate = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      time.hour,
+      time.minute,
+    );
+
+    // 如果时间已过，则安排到明天
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    final tzTime = tz.TZDateTime.from(scheduledDate, tz.local);
+
+    await _notifications.zonedSchedule(
+      _dailySummaryNotificationId,
+      '📋 每日任务总结',
+      body,
+      tzTime,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'daily_summary',
+          '每日总结',
+          channelDescription: '每日任务总结通知',
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time, // 每天重复
+    );
+  }
+
+  /// 取消每日总结通知
+  Future<void> cancelDailySummary() async {
+    await initialize();
+    await _notifications.cancel(_dailySummaryNotificationId);
+  }
+
+  /// 更新每日总结通知（用于显示当前待办任务数量）
+  Future<void> updateDailySummary(int pendingCount, {List<String>? taskTitles}) async {
+    await initialize();
+
+    // 检查是否已有每日总结通知安排
+    // 如果有，我们需要重新安排以更新内容
+    // 这里我们直接重新调度
+    final pending = await _notifications.pendingNotificationRequests();
+    final hasDailySummary = pending.any((p) => p.id == _dailySummaryNotificationId);
+
+    if (hasDailySummary) {
+      // 取消旧的，重新安排
+      await _notifications.cancel(_dailySummaryNotificationId);
+    }
   }
 }

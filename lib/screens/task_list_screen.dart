@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../models/task_enums.dart';
 import '../providers/task_provider.dart';
+import '../providers/tag_provider.dart';
 import '../widgets/task_card.dart';
 import 'task_form_screen.dart';
 import 'task_detail_screen.dart';
@@ -234,6 +235,20 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     child: _buildCategoryChip(context, category),
                   );
                 }),
+                const SizedBox(width: 8),
+                // Tag filters
+                Consumer<TagProvider>(
+                  builder: (context, tagProvider, child) {
+                    return Row(
+                      children: tagProvider.tags.map((tag) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _buildTagChip(context, tag),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -510,6 +525,43 @@ class _TaskListScreenState extends State<TaskListScreen> {
         provider.setCategoryFilter(isSelected ? null : category);
       },
       selectedColor: category.color,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : Colors.grey[800],
+        fontSize: 13,
+      ),
+      backgroundColor: Colors.grey[200],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      side: BorderSide.none,
+    );
+  }
+
+  Widget _buildTagChip(BuildContext context, CustomTag tag) {
+    final provider = context.watch<TaskProvider>();
+    final isSelected = provider.tagFilter == tag.id;
+
+    return FilterChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: tag.color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(tag.name),
+        ],
+      ),
+      selected: isSelected,
+      onSelected: (_) {
+        provider.setTagFilter(isSelected ? null : tag.id);
+      },
+      selectedColor: tag.color,
       labelStyle: TextStyle(
         color: isSelected ? Colors.white : Colors.grey[800],
         fontSize: 13,

@@ -7,7 +7,8 @@ enum RepeatType {
   daily,
   weekly,
   monthly,
-  yearly;
+  yearly,
+  custom; // 自定义重复
 
   String get label {
     switch (this) {
@@ -21,6 +22,8 @@ enum RepeatType {
         return '每月';
       case RepeatType.yearly:
         return '每年';
+      case RepeatType.custom:
+        return '自定义';
     }
   }
 
@@ -28,6 +31,123 @@ enum RepeatType {
     return RepeatType.values.firstWhere(
       (e) => e.name == value,
       orElse: () => RepeatType.none,
+    );
+  }
+}
+
+/// 重复间隔单位
+enum RepeatUnit {
+  day,
+  week,
+  month;
+
+  String get label {
+    switch (this) {
+      case RepeatUnit.day:
+        return '天';
+      case RepeatUnit.week:
+        return '周';
+      case RepeatUnit.month:
+        return '月';
+    }
+  }
+
+  static RepeatUnit fromString(String value) {
+    return RepeatUnit.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => RepeatUnit.day,
+    );
+  }
+}
+
+/// 自定义重复规则
+class CustomRepeat {
+  final int interval; // 间隔数量
+  final RepeatUnit unit; // 间隔单位
+  final int? endAfterNTimes; // 重复次数限制（可选）
+  final DateTime? endDate; // 结束日期（可选）
+
+  CustomRepeat({
+    required this.interval,
+    required this.unit,
+    this.endAfterNTimes,
+    this.endDate,
+  });
+
+  /// 获取重复规则的描述
+  String get description {
+    final intervalStr = interval == 1 ? '' : '$interval';
+    switch (unit) {
+      case RepeatUnit.day:
+        return '每${intervalStr}天';
+      case RepeatUnit.week:
+        return '每${intervalStr}周';
+      case RepeatUnit.month:
+        return '每${intervalStr}月';
+    }
+  }
+
+  /// 计算下一次重复日期
+  DateTime? getNextDate(DateTime currentDate) {
+    switch (unit) {
+      case RepeatUnit.day:
+        return currentDate.add(Duration(days: interval));
+      case RepeatUnit.week:
+        return currentDate.add(Duration(days: 7 * interval));
+      case RepeatUnit.month:
+        return _addMonths(currentDate, interval);
+    }
+  }
+
+  DateTime _addMonths(DateTime source, int months) {
+    final baseMonth = source.month - 1 + months;
+    final targetYear = source.year + (baseMonth ~/ 12);
+    final targetMonth = (baseMonth % 12) + 1;
+    final lastDay = DateTime(targetYear, targetMonth + 1, 0).day;
+    final targetDay = source.day > lastDay ? lastDay : source.day;
+    return DateTime(
+      targetYear,
+      targetMonth,
+      targetDay,
+      source.hour,
+      source.minute,
+      source.second,
+      source.millisecond,
+      source.microsecond,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'interval': interval,
+      'unit': unit.name,
+      'endAfterNTimes': endAfterNTimes,
+      'endDate': endDate?.toIso8601String(),
+    };
+  }
+
+  factory CustomRepeat.fromJson(Map<String, dynamic> json) {
+    return CustomRepeat(
+      interval: json['interval'] as int,
+      unit: RepeatUnit.fromString(json['unit'] as String),
+      endAfterNTimes: json['endAfterNTimes'] as int?,
+      endDate: json['endDate'] != null
+          ? DateTime.parse(json['endDate'] as String)
+          : null,
+    );
+  }
+
+  CustomRepeat copyWith({
+    int? interval,
+    RepeatUnit? unit,
+    int? endAfterNTimes,
+    DateTime? endDate,
+  }) {
+    return CustomRepeat(
+      interval: interval ?? this.interval,
+      unit: unit ?? this.unit,
+      endAfterNTimes: endAfterNTimes ?? this.endAfterNTimes,
+      endDate: endDate ?? this.endDate,
     );
   }
 }
@@ -165,6 +285,8 @@ class Task {
   final DateTime? reminderTime;
   final List<String> customTagIds; // 自定义标签ID列表
   final String? groupId; // 任务分组ID
+  final List<String> prerequisiteIds; // 前置任务ID列表
+  final CustomRepeat? customRepeat; // 自定义重复规则
 
   double get subtaskProgress {
     if (subtasks.isEmpty) return 0;
@@ -193,6 +315,8 @@ class Task {
     this.reminderTime,
     this.customTagIds = const [],
     this.groupId,
+    this.prerequisiteIds = const [],
+    this.customRepeat,
   });
 
   Task copyWith({
@@ -211,6 +335,8 @@ class Task {
     DateTime? reminderTime,
     List<String>? customTagIds,
     String? groupId,
+    List<String>? prerequisiteIds,
+    CustomRepeat? customRepeat,
   }) {
     return Task(
       id: id ?? this.id,
@@ -228,6 +354,8 @@ class Task {
       reminderTime: reminderTime ?? this.reminderTime,
       customTagIds: customTagIds ?? this.customTagIds,
       groupId: groupId ?? this.groupId,
+      prerequisiteIds: prerequisiteIds ?? this.prerequisiteIds,
+      customRepeat: customRepeat ?? this.customRepeat,
     );
   }
 
@@ -248,6 +376,8 @@ class Task {
       'reminderTime': reminderTime?.toIso8601String(),
       'customTagIds': customTagIds,
       'groupId': groupId,
+      'prerequisiteIds': prerequisiteIds,
+      'customRepeat': customRepeat?.toJson(),
     };
   }
 
@@ -262,6 +392,16 @@ class Task {
     List<String> tagIds = [];
     if (json['customTagIds'] != null) {
       tagIds = List<String>.from(json['customTagIds'] as List);
+    }
+
+    List<String> prerequisiteIdsList = [];
+    if (json['prerequisiteIds'] != null) {
+      prerequisiteIdsList = List<String>.from(json['prerequisiteIds'] as List);
+    }
+
+    CustomRepeat? customRepeatData;
+    if (json['customRepeat'] != null) {
+      customRepeatData = CustomRepeat.fromJson(json['customRepeat'] as Map<String, dynamic>);
     }
 
     return Task(
@@ -288,6 +428,8 @@ class Task {
           ? DateTime.parse(json['reminderTime'] as String)
           : null,
       groupId: json['groupId'] as String?,
+      prerequisiteIds: prerequisiteIdsList,
+      customRepeat: customRepeatData,
     );
   }
 }

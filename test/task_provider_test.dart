@@ -3,6 +3,7 @@ import 'package:ai_todo/models/task_data_bundle.dart';
 import 'package:ai_todo/providers/task_provider.dart';
 import 'package:ai_todo/repositories/task_repository.dart';
 import 'package:ai_todo/services/notification_service.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _InMemoryTaskRepository implements TaskRepository {
@@ -70,6 +71,15 @@ class _FakeNotificationService implements NotificationService {
   Future<void> scheduleTaskReminder(Task task) async {
     scheduledTaskIds.add(task.id);
   }
+
+  @override
+  Future<void> cancelDailySummary() async {}
+
+  @override
+  Future<void> scheduleDailySummary(TimeOfDay time, int pendingCount, {List<String>? taskTitles}) async {}
+
+  @override
+  Future<void> updateDailySummary(int pendingCount, {List<String>? taskTitles}) async {}
 }
 
 Task _task({

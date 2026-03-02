@@ -7,6 +7,8 @@ import 'providers/theme_provider.dart';
 import 'providers/tag_provider.dart';
 import 'providers/priority_provider.dart';
 import 'providers/ai_mode_provider.dart';
+import 'providers/notification_settings_provider.dart';
+import 'providers/sync_provider.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
 
@@ -30,6 +32,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TagProvider()),
         ChangeNotifierProvider(create: (_) => PriorityProvider()),
         ChangeNotifierProvider(create: (_) => AiModeProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationSettingsProvider()),
+        ChangeNotifierProvider(create: (_) => SyncProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

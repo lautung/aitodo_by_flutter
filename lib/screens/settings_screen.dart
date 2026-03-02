@@ -7,6 +7,8 @@ import '../providers/task_provider.dart';
 import '../providers/tag_provider.dart';
 import '../providers/priority_provider.dart';
 import '../providers/ai_mode_provider.dart';
+import '../providers/notification_settings_provider.dart';
+import '../services/notification_service.dart';
 import 'recycle_bin_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -92,6 +94,65 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // 通知设置
+              _buildSectionHeader('通知'),
+              Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Consumer<NotificationSettingsProvider>(
+                  builder: (context, settingsProvider, child) {
+                    return Column(
+                      children: [
+                        SwitchListTile(
+                          title: const Text('每日任务总结'),
+                          subtitle: const Text('每天固定时间推送未完成任务总结'),
+                          value: settingsProvider.isDailySummaryEnabled,
+                          onChanged: (value) async {
+                            await settingsProvider.setDailySummaryEnabled(value);
+                            if (value) {
+                              final taskProvider = context.read<TaskProvider>();
+                              final pendingTasks = taskProvider.allTasks.where((t) => !t.isCompleted).toList();
+                              final taskTitles = pendingTasks.map((t) => t.title).toList();
+                              await NotificationService().scheduleDailySummary(
+                                settingsProvider.dailySummaryTime,
+                                pendingTasks.length,
+                                taskTitles: taskTitles,
+                              );
+                            } else {
+                              await NotificationService().cancelDailySummary();
+                            }
+                          },
+                        ),
+                        if (settingsProvider.isDailySummaryEnabled)
+                          ListTile(
+                            title: const Text('提醒时间'),
+                            subtitle: Text(
+                              '${settingsProvider.dailySummaryTime.hour.toString().padLeft(2, '0')}:${settingsProvider.dailySummaryTime.minute.toString().padLeft(2, '0')}',
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () async {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: settingsProvider.dailySummaryTime,
+                              );
+                              if (time != null) {
+                                await settingsProvider.setDailySummaryTime(time);
+                                final taskProvider = context.read<TaskProvider>();
+                                final pendingTasks = taskProvider.allTasks.where((t) => !t.isCompleted).toList();
+                                final taskTitles = pendingTasks.map((t) => t.title).toList();
+                                await NotificationService().scheduleDailySummary(
+                                  time,
+                                  pendingTasks.length,
+                                  taskTitles: taskTitles,
+                                );
+                              }
+                            },
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 16),
