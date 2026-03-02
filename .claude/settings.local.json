@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where flutter:*)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(flutter pub get)",
+      "Bash(flutter analyze)",
+      "Bash(cmd /c \"flutter --version\")",
+      "Bash(flutter --version)",
+      "Bash(cmd /c \"where flutter\")",
+      "Bash(powershell -Command \"Get-Command flutter -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")",
+      "Bash(powershell:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(cd /d/projects/AiTODO && flutter clean 2>&1)",
+      "Bash(cmd:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(cd:*)",
+      "Bash(flutter clean:*)",
+      "Bash(head:*)",
+      "WebFetch(domain:pub.dev)",
+      "Bash(cd D:/projects/AiTODO && flutter analyze lib/services/speech_service.dart 2>&1)",
+      "mcp__fetch__fetch",
+      "Bash(flutter test:*)"
+    ]
+  }
+}
