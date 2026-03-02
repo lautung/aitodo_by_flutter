@@ -164,6 +164,7 @@ class Task {
   final List<SubTask> subtasks;
   final DateTime? reminderTime;
   final List<String> customTagIds; // 自定义标签ID列表
+  final String? groupId; // 任务分组ID
 
   double get subtaskProgress {
     if (subtasks.isEmpty) return 0;
@@ -191,6 +192,7 @@ class Task {
     this.subtasks = const [],
     this.reminderTime,
     this.customTagIds = const [],
+    this.groupId,
   });
 
   Task copyWith({
@@ -208,6 +210,7 @@ class Task {
     List<SubTask>? subtasks,
     DateTime? reminderTime,
     List<String>? customTagIds,
+    String? groupId,
   }) {
     return Task(
       id: id ?? this.id,
@@ -224,6 +227,7 @@ class Task {
       subtasks: subtasks ?? this.subtasks,
       reminderTime: reminderTime ?? this.reminderTime,
       customTagIds: customTagIds ?? this.customTagIds,
+      groupId: groupId ?? this.groupId,
     );
   }
 
@@ -243,6 +247,7 @@ class Task {
       'subtasks': subtasks.map((s) => s.toJson()).toList(),
       'reminderTime': reminderTime?.toIso8601String(),
       'customTagIds': customTagIds,
+      'groupId': groupId,
     };
   }
 
@@ -282,6 +287,7 @@ class Task {
       reminderTime: json['reminderTime'] != null
           ? DateTime.parse(json['reminderTime'] as String)
           : null,
+      groupId: json['groupId'] as String?,
     );
   }
 }

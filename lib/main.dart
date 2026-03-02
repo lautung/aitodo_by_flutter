@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/task_provider.dart';
+import 'providers/task_group_provider.dart';
+import 'providers/pomodoro_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/tag_provider.dart';
 import 'providers/priority_provider.dart';
@@ -23,6 +25,8 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => TaskProvider()..initialize()),
+        ChangeNotifierProvider(create: (_) => TaskGroupProvider()..initialize()),
+        ChangeNotifierProvider(create: (_) => PomodoroProvider()),
         ChangeNotifierProvider(create: (_) => TagProvider()),
         ChangeNotifierProvider(create: (_) => PriorityProvider()),
         ChangeNotifierProvider(create: (_) => AiModeProvider()),
@@ -35,7 +39,7 @@ class MyApp extends StatelessWidget {
             themeMode: themeProvider.themeMode,
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF2196F3),
+                seedColor: themeProvider.seedColor,
                 brightness: Brightness.light,
               ),
               useMaterial3: true,
@@ -61,7 +65,7 @@ class MyApp extends StatelessWidget {
             ),
             darkTheme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF2196F3),
+                seedColor: themeProvider.seedColor,
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,

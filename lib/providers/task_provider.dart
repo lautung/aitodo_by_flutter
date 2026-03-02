@@ -27,6 +27,7 @@ class TaskProvider extends ChangeNotifier {
   List<Task> _deletedTasks = []; // 回收站
   TaskFilter _filter = TaskFilter.all;
   TaskCategory? _categoryFilter;
+  String? _groupFilter; // 分组筛选
   String _searchQuery = '';
   TaskSortType _sortType = TaskSortType.createdTime;
   bool _sortAscending = false;
@@ -38,6 +39,7 @@ class TaskProvider extends ChangeNotifier {
   List<Task> get allTasks => List.unmodifiable(_tasks);
   TaskFilter get filter => _filter;
   TaskCategory? get categoryFilter => _categoryFilter;
+  String? get groupFilter => _groupFilter;
   String get searchQuery => _searchQuery;
   TaskSortType get sortType => _sortType;
   bool get sortAscending => _sortAscending;
@@ -573,6 +575,11 @@ class TaskProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setGroupFilter(String? groupId) {
+    _groupFilter = groupId;
+    notifyListeners();
+  }
+
   void setSearchQuery(String query) {
     _searchQuery = query;
     notifyListeners();
@@ -606,6 +613,11 @@ class TaskProvider extends ChangeNotifier {
     // Apply category filter
     if (_categoryFilter != null) {
       result = result.where((t) => t.category == _categoryFilter).toList();
+    }
+
+    // Apply group filter
+    if (_groupFilter != null) {
+      result = result.where((t) => t.groupId == _groupFilter).toList();
     }
 
     // Apply search filter

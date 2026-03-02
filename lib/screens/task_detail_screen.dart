@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/task.dart';
 import '../models/subtask.dart';
 import '../providers/task_provider.dart';
@@ -75,6 +76,35 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     context.read<TaskProvider>().updateTask(_task);
   }
 
+  void _shareTask() {
+    final dateFormat = DateFormat('yyyy-MM-dd');
+    final buffer = StringBuffer();
+
+    buffer.writeln('【任务分享】');
+    buffer.writeln('');
+    buffer.writeln('标题: ${_task.title}');
+    if (_task.description != null && _task.description!.isNotEmpty) {
+      buffer.writeln('描述: ${_task.description}');
+    }
+    buffer.writeln('优先级: ${_task.priority.label}');
+    buffer.writeln('分类: ${_task.category.label}');
+    if (_task.dueDate != null) {
+      buffer.writeln('截止日期: ${dateFormat.format(_task.dueDate!)}');
+    }
+    buffer.writeln('状态: ${_task.isCompleted ? "已完成" : "进行中"}');
+    if (_task.subtasks.isNotEmpty) {
+      buffer.writeln('');
+      buffer.writeln('子任务:');
+      for (final subtask in _task.subtasks) {
+        buffer.writeln('${subtask.isCompleted ? "☑" : "☐"} ${subtask.title}');
+      }
+    }
+    buffer.writeln('');
+    buffer.writeln('—来自 AiTODO');
+
+    Share.share(buffer.toString());
+  }
+
   Future<void> _navigateToEdit() async {
     await Navigator.push(
       context,
@@ -103,6 +133,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: _shareTask,
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: _navigateToEdit,

@@ -314,6 +314,11 @@ class TaskCardState extends State<_SwipeToDeleteCard>
                     ],
                     const SizedBox(height: 8),
                     _buildTagsRow(context, dateFormat),
+                    // 子任务进度
+                    if (task.subtasks.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _buildSubtaskProgress(),
+                    ],
                   ],
                 ),
               ),
@@ -321,6 +326,45 @@ class TaskCardState extends State<_SwipeToDeleteCard>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSubtaskProgress() {
+    final task = widget.task;
+    final completed = task.subtasks.where((s) => s.isCompleted).length;
+    final total = task.subtasks.length;
+    final progress = task.subtaskProgress;
+
+    return Row(
+      children: [
+        Icon(
+          Icons.checklist,
+          size: 14,
+          color: progress == 1.0 ? Colors.green : Colors.grey,
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.grey[200],
+              valueColor: AlwaysStoppedAnimation<Color>(
+                progress == 1.0 ? Colors.green : Colors.blue,
+              ),
+              minHeight: 4,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$completed/$total',
+          style: TextStyle(
+            fontSize: 11,
+            color: progress == 1.0 ? Colors.green : Colors.grey[600],
+          ),
+        ),
+      ],
     );
   }
 

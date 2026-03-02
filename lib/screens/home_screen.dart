@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'task_list_screen.dart';
 import 'statistics_screen.dart';
 import 'ai_chat_screen.dart';
+import 'pomodoro_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = const [
     TaskListScreen(),
     StatisticsScreen(),
+    PomodoroScreen(),
     AIChatScreen(),
     SettingsScreen(),
   ];
@@ -45,6 +47,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.bar_chart_outlined),
             selectedIcon: Icon(Icons.bar_chart),
             label: '统计',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.timer_outlined),
+            selectedIcon: Icon(Icons.timer),
+            label: '番茄钟',
           ),
           NavigationDestination(
             icon: Icon(Icons.smart_toy_outlined),

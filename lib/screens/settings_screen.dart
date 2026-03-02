@@ -63,6 +63,33 @@ class SettingsScreen extends StatelessWidget {
                           themeProvider.setThemeMode(selected.first);
                         },
                       ),
+                      const SizedBox(height: 16),
+                      const Text('主题色'),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 8,
+                        children: ThemeProvider.availableColors.map((color) {
+                          final isSelected = themeProvider.seedColor == color;
+                          return GestureDetector(
+                            onTap: () => themeProvider.setSeedColor(color),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: isSelected
+                                    ? Border.all(color: Colors.black, width: 3)
+                                    : null,
+                              ),
+                              child: isSelected
+                                  ? const Icon(Icons.check, color: Colors.white, size: 20)
+                                  : null,
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ],
                   ),
                 ),
