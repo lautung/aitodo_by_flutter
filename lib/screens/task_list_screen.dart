@@ -7,6 +7,7 @@ import '../providers/tag_provider.dart';
 import '../widgets/task_card.dart';
 import 'task_form_screen.dart';
 import 'task_detail_screen.dart';
+import 'settings_screen.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -156,6 +157,16 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   icon: const Icon(Icons.sort),
                   tooltip: '排序',
                   onPressed: () => _showSortMenu(context),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  tooltip: '设置',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                    );
+                  },
                 ),
               ],
         bottom: _isMultiSelectMode

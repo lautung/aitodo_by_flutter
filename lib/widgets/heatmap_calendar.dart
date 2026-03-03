@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../services/lunar_service.dart';
 
 /// 热力图颜色等级
 class HeatmapColors {
@@ -21,7 +22,7 @@ class HeatmapColors {
 }
 
 /// 热力图组件 - 类似 GitHub 贡献图
-class HeatmapCalendar extends StatelessWidget {
+class HeatmapCalendar extends StatefulWidget {
   final Map<DateTime, int> data;
   final Function(DateTime)? onDayTap;
   final int weeksToShow;
@@ -34,13 +35,32 @@ class HeatmapCalendar extends StatelessWidget {
   });
 
   @override
+  State<HeatmapCalendar> createState() => _HeatmapCalendarState();
+}
+
+class _HeatmapCalendarState extends State<HeatmapCalendar> {
+  late ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
     // 计算起始日期（weeksToShow 周前的周日）
     final startDate = today.subtract(Duration(days: today.weekday % 7));
-    final adjustedStart = startDate.subtract(Duration(days: (weeksToShow - 1) * 7));
+    final adjustedStart = startDate.subtract(Duration(days: (widget.weeksToShow - 1) * 7));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,7 +115,12 @@ class HeatmapCalendar extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(left: 24),
-      child: Row(children: months),
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        scrollDirection: Axis.horizontal,
+        physics: const ClampingScrollPhysics(),
+        child: Row(children: months),
+      ),
     );
   }
 
@@ -124,19 +149,19 @@ class HeatmapCalendar extends StatelessWidget {
   Widget _buildHeatmapGrid(DateTime startDate, DateTime today) {
     final weeks = <Widget>[];
 
-    for (int week = 0; week < weeksToShow; week++) {
+    for (int week = 0; week < widget.weeksToShow; week++) {
       final weekStart = startDate.add(Duration(days: week * 7));
       final days = <Widget>[];
 
       for (int day = 0; day < 7; day++) {
         final date = weekStart.add(Duration(days: day));
         final isFuture = date.isAfter(today);
-        final count = isFuture ? 0 : (data[DateTime(date.year, date.month, date.day)] ?? 0);
+        final count = isFuture ? 0 : (widget.data[DateTime(date.year, date.month, date.day)] ?? 0);
 
         days.add(
           GestureDetector(
-            onTap: (!isFuture && onDayTap != null)
-                ? () => onDayTap!(date)
+            onTap: (!isFuture && widget.onDayTap != null)
+                ? () => widget.onDayTap!(date)
                 : null,
             child: Tooltip(
               message: '${DateFormat('yyyy-MM-dd').format(date)}: $count 个任务',
@@ -164,7 +189,9 @@ class HeatmapCalendar extends StatelessWidget {
     }
 
     return SingleChildScrollView(
+      controller: _scrollController,
       scrollDirection: Axis.horizontal,
+      physics: const ClampingScrollPhysics(),
       child: Row(children: weeks),
     );
   }
@@ -207,12 +234,657 @@ class HeatmapCalendar extends StatelessWidget {
   }
 }
 
-/// 月度日历组件
+/// 年度日历视图
+class YearCalendar extends StatefulWidget {
+  final int year;
+  final Map<DateTime, int> data;
+  final Function(DateTime)? onMonthTap;
+  final Function(DateTime)? onDayTap;
+
+  const YearCalendar({
+    super.key,
+    required this.year,
+    required this.data,
+    this.onMonthTap,
+    this.onDayTap,
+  });
+
+  @override
+  State<YearCalendar> createState() => _YearCalendarState();
+}
+
+class _YearCalendarState extends State<YearCalendar> {
+  late int _year;
+
+  @override
+  void initState() {
+    super.initState();
+    _year = widget.year;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _buildHeader(),
+        const SizedBox(height: 16),
+        _buildYearGrid(),
+      ],
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.chevron_left),
+          onPressed: () => setState(() => _year--),
+        ),
+        Text(
+          '$_year 年',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_right),
+          onPressed: () => setState(() => _year++),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildYearGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 1.0,
+      ),
+      itemCount: 12,
+      itemBuilder: (context, index) {
+        final month = index + 1;
+        return _buildMonthCell(month);
+      },
+    );
+  }
+
+  Widget _buildMonthCell(int month) {
+    final now = DateTime.now();
+    final isCurrentMonth = _year == now.year && month == now.month;
+    final daysInMonth = DateTime(_year, month + 1, 0).day;
+
+    // 统计当月任务数
+    var taskCount = 0;
+    for (var day = 1; day <= daysInMonth; day++) {
+      final dateKey = DateTime(_year, month, day);
+      taskCount += widget.data[dateKey] ?? 0;
+    }
+
+    return GestureDetector(
+      onTap: widget.onMonthTap != null
+          ? () => widget.onMonthTap!(DateTime(_year, month, 1))
+          : null,
+      child: Container(
+        decoration: BoxDecoration(
+          color: taskCount > 0
+              ? HeatmapColors.getColorForCount(taskCount).withValues(alpha: 0.3)
+              : Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+          border: isCurrentMonth
+              ? Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                )
+              : null,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '$month 月',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isCurrentMonth ? FontWeight.bold : FontWeight.normal,
+                color: isCurrentMonth
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '$taskCount 任务',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 周日历视图
+class WeekCalendar extends StatefulWidget {
+  final DateTime initialDate;
+  final Map<DateTime, int> data;
+  final Function(DateTime)? onDayTap;
+
+  const WeekCalendar({
+    super.key,
+    required this.initialDate,
+    required this.data,
+    this.onDayTap,
+  });
+
+  @override
+  State<WeekCalendar> createState() => _WeekCalendarState();
+}
+
+class _WeekCalendarState extends State<WeekCalendar> {
+  late DateTime _currentWeekStart;
+
+  @override
+  void initState() {
+    super.initState();
+    // 获取本周的起始日期（周日）
+    _currentWeekStart = widget.initialDate.subtract(
+      Duration(days: widget.initialDate.weekday % 7),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _buildHeader(),
+        const SizedBox(height: 16),
+        _buildWeekView(),
+      ],
+    );
+  }
+
+  Widget _buildHeader() {
+    final weekEnd = _currentWeekStart.add(const Duration(days: 6));
+    final formatter = DateFormat('MM/dd');
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.chevron_left),
+          onPressed: () {
+            setState(() {
+              _currentWeekStart = _currentWeekStart.subtract(const Duration(days: 7));
+            });
+          },
+        ),
+        Text(
+          '${formatter.format(_currentWeekStart)} - ${formatter.format(weekEnd)}',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_right),
+          onPressed: () {
+            setState(() {
+              _currentWeekStart = _currentWeekStart.add(const Duration(days: 7));
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeekView() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return Row(
+      children: List.generate(7, (index) {
+        final date = _currentWeekStart.add(Duration(days: index));
+        final dateKey = DateTime(date.year, date.month, date.day);
+        final count = widget.data[dateKey] ?? 0;
+        final isToday = date.isAtSameMomentAs(today);
+        final isFuture = date.isAfter(today);
+
+        return Expanded(
+          child: GestureDetector(
+            onTap: (!isFuture && widget.onDayTap != null)
+                ? () => widget.onDayTap!(date)
+                : null,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: isToday
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                    : (count > 0
+                        ? HeatmapColors.getColorForCount(count).withValues(alpha: 0.2)
+                        : Colors.grey[50]),
+                borderRadius: BorderRadius.circular(8),
+                border: isToday
+                    ? Border.all(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      )
+                    : null,
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    ['日', '一', '二', '三', '四', '五', '六'][date.weekday % 7],
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${date.day}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                      color: isFuture
+                          ? Colors.grey[400]
+                          : (isToday
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.black87),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  if (count > 0)
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: HeatmapColors.getColorForCount(count),
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 6),
+                ],
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+/// 日视图
+class DayCalendar extends StatelessWidget {
+  final DateTime date;
+  final Map<DateTime, int> data;
+  final List<dynamic> tasks;
+  final Function(dynamic)? onTaskTap;
+  final LunarService lunarService;
+
+  const DayCalendar({
+    super.key,
+    required this.date,
+    required this.data,
+    required this.tasks,
+    this.onTaskTap,
+    required this.lunarService,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final lunarInfo = lunarService.getLunarInfo(date);
+    final huangliInfo = lunarService.getHuangliInfo(date);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDateHeader(context, lunarInfo),
+          const SizedBox(height: 16),
+          _buildHuangliCard(context, huangliInfo),
+          const SizedBox(height: 16),
+          _buildTaskSummary(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateHeader(BuildContext context, LunarInfo lunarInfo) {
+    final now = DateTime.now();
+    final isToday = date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isToday
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    isToday ? '今天' : DateFormat('EEEE').format(date),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              DateFormat('yyyy年MM月dd日').format(date),
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '农历: ${lunarInfo.monthName}${lunarInfo.dayName} (${lunarInfo.zodiac}年)${lunarInfo.isLeapMonth ? " 闰月" : ""}',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            if (lunarInfo.solarTerm != null || lunarInfo.festival != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Wrap(
+                  spacing: 8,
+                  children: [
+                    if (lunarInfo.solarTerm != null)
+                      _buildTag(lunarInfo.solarTerm!, Colors.orange),
+                    if (lunarInfo.festival != null)
+                      _buildTag(lunarInfo.festival!, Colors.red),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTag(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          color: color,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHuangliCard(BuildContext context, HuangliInfo info) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.auto_stories, size: 18, color: Colors.amber),
+                SizedBox(width: 8),
+                Text(
+                  '黄历',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _buildLuckIndicator(info.luck),
+                const SizedBox(width: 16),
+                Expanded(child: Text(info.chong, style: TextStyle(color: Colors.grey[600]))),
+                Expanded(child: Text(info.sha, style: TextStyle(color: Colors.grey[600]))),
+              ],
+            ),
+            const Divider(height: 24),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle, size: 14, color: Colors.green[600]),
+                          const SizedBox(width: 4),
+                          const Text(
+                            '宜',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        info.yi,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.cancel, size: 14, color: Colors.red[600]),
+                          const SizedBox(width: 4),
+                          const Text(
+                            '忌',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        info.ji,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLuckIndicator(String luck) {
+    Color color;
+    IconData icon;
+    switch (luck) {
+      case '吉':
+        color = Colors.green;
+        icon = Icons.sentiment_satisfied;
+        break;
+      case '凶':
+        color = Colors.red;
+        icon = Icons.sentiment_dissatisfied;
+        break;
+      default:
+        color = Colors.grey;
+        icon = Icons.sentiment_neutral;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 4),
+          Text(
+            luck,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaskSummary(BuildContext context) {
+    final dateKey = DateTime(date.year, date.month, date.day);
+    final count = data[dateKey] ?? 0;
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.task_alt, size: 18, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  '任务概览',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$count 个任务',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (tasks.isNotEmpty) ...[
+              const Divider(height: 24),
+              ...tasks.map((task) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      task.isCompleted ? Icons.check_circle : Icons.circle_outlined,
+                      color: task.isCompleted ? Colors.green : Colors.grey,
+                    ),
+                    title: Text(
+                      task.title,
+                      style: TextStyle(
+                        decoration: task.isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                    ),
+                    trailing: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: task.category.color,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  )),
+            ] else
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[400]),
+                      const SizedBox(height: 8),
+                      Text(
+                        '暂无任务',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 月度日历组件（增强版，支持农历）
 class MonthlyCalendar extends StatefulWidget {
   final int year;
   final int month;
   final Map<DateTime, int> data;
   final Function(DateTime)? onDayTap;
+  final bool showLunar;
+  final LunarService? lunarService;
 
   const MonthlyCalendar({
     super.key,
@@ -220,6 +892,8 @@ class MonthlyCalendar extends StatefulWidget {
     required this.month,
     required this.data,
     this.onDayTap,
+    this.showLunar = true,
+    this.lunarService,
   });
 
   @override
@@ -229,12 +903,14 @@ class MonthlyCalendar extends StatefulWidget {
 class _MonthlyCalendarState extends State<MonthlyCalendar> {
   late int _year;
   late int _month;
+  late LunarService _lunarService;
 
   @override
   void initState() {
     super.initState();
     _year = widget.year;
     _month = widget.month;
+    _lunarService = widget.lunarService ?? LunarService();
   }
 
   @override
@@ -339,13 +1015,26 @@ class _MonthlyCalendarState extends State<MonthlyCalendar> {
       final cells = <Widget>[];
       for (int i = 0; i < 7; i++) {
         if (dayCounter < 1 || dayCounter > daysInMonth) {
-          cells.add(const Expanded(child: SizedBox(height: 40)));
+          cells.add(const Expanded(child: SizedBox(height: 50)));
         } else {
           final date = DateTime(_year, _month, dayCounter);
           final dateKey = DateTime(date.year, date.month, date.day);
           final count = widget.data[dateKey] ?? 0;
           final isToday = date.isAtSameMomentAs(today);
           final isFuture = date.isAfter(today);
+
+          // 获取农历信息
+          String? lunarDay;
+          if (widget.showLunar && !isFuture) {
+            try {
+              final lunarInfo = _lunarService.getLunarInfo(date);
+              lunarDay = lunarInfo.dayName == '初一'
+                  ? lunarInfo.monthName.substring(1)
+                  : lunarInfo.dayName.substring(1);
+            } catch (e) {
+              // 忽略错误
+            }
+          }
 
           cells.add(
             Expanded(
@@ -354,7 +1043,7 @@ class _MonthlyCalendarState extends State<MonthlyCalendar> {
                     ? () => widget.onDayTap!(date)
                     : null,
                 child: Container(
-                  height: 40,
+                  height: 50,
                   margin: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     color: isFuture
@@ -385,10 +1074,19 @@ class _MonthlyCalendarState extends State<MonthlyCalendar> {
                                   : Colors.black87),
                         ),
                       ),
+                      if (lunarDay != null)
+                        Text(
+                          lunarDay,
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                       if (count > 0)
                         Container(
                           width: 6,
                           height: 6,
+                          margin: const EdgeInsets.only(top: 2),
                           decoration: BoxDecoration(
                             color: HeatmapColors.getColorForCount(count),
                             shape: BoxShape.circle,
