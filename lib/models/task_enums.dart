@@ -12,6 +12,23 @@ enum TaskSortType {
   priority,
 }
 
+/// 标签筛选模式
+enum TagFilterMode {
+  or,  // 任一匹配
+  and, // 全部匹配
+}
+
+extension TagFilterModeExtension on TagFilterMode {
+  String get label {
+    switch (this) {
+      case TagFilterMode.or:
+        return '任一匹配';
+      case TagFilterMode.and:
+        return '全部匹配';
+    }
+  }
+}
+
 /// 统计时间范围过滤器
 enum StatsTimeFilter {
   all,

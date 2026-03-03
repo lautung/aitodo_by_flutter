@@ -29,6 +29,10 @@ class TaskProvider extends ChangeNotifier {
   TaskCategory? _categoryFilter;
   String? _groupFilter; // 分组筛选
   String? _tagFilter; // 标签筛选
+  List<String> _tagFilters = []; // 多标签筛选
+  TagFilterMode _tagFilterMode = TagFilterMode.or; // 标签筛选模式
+  DateTime? _dateFrom; // 开始日期筛选
+  DateTime? _dateTo; // 结束日期筛选
   String _searchQuery = '';
   TaskSortType _sortType = TaskSortType.createdTime;
   bool _sortAscending = false;
@@ -42,6 +46,10 @@ class TaskProvider extends ChangeNotifier {
   TaskCategory? get categoryFilter => _categoryFilter;
   String? get groupFilter => _groupFilter;
   String? get tagFilter => _tagFilter;
+  List<String> get tagFilters => _tagFilters;
+  TagFilterMode get tagFilterMode => _tagFilterMode;
+  DateTime? get dateFrom => _dateFrom;
+  DateTime? get dateTo => _dateTo;
   String get searchQuery => _searchQuery;
   TaskSortType get sortType => _sortType;
   bool get sortAscending => _sortAscending;
@@ -488,6 +496,138 @@ class TaskProvider extends ChangeNotifier {
     );
   }
 
+  /// 导出为 CSV 格式
+  Future<String?> exportToCsv({
+    List<Task>? tasks,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+  }) async {
+    final exportTasks = tasks ?? _tasks;
+
+    // Apply date range filter if specified
+    var filteredTasks = exportTasks;
+    if (dateFrom != null || dateTo != null) {
+      filteredTasks = exportTasks.where((t) {
+        if (t.dueDate == null) return false;
+        if (dateFrom != null && t.dueDate!.isBefore(dateFrom)) return false;
+        if (dateTo != null && t.dueDate!.isAfter(dateTo)) return false;
+        return true;
+      }).toList();
+    }
+
+    final buffer = StringBuffer();
+
+    // CSV header
+    buffer.writeln('标题,描述,优先级,分类,截止日期,状态,创建时间,标签');
+
+    // CSV data
+    final dateFormat = 'yyyy-MM-dd HH:mm';
+    for (final task in filteredTasks) {
+      final title = _escapeCsv(task.title);
+      final description = _escapeCsv(task.description ?? '');
+      final priority = task.priority.label;
+      final category = task.category.label;
+      final dueDate = task.dueDate != null
+          ? _formatDate(task.dueDate!, dateFormat)
+          : '';
+      final status = task.isCompleted ? '已完成' : '进行中';
+      final createdAt = _formatDate(task.createdAt, dateFormat);
+      final tags = task.customTagIds.join(';');
+
+      buffer.writeln('$title,$description,$priority,$category,$dueDate,$status,$createdAt,$tags');
+    }
+
+    return buffer.toString();
+  }
+
+  /// 导出为 Markdown 格式
+  Future<String?> exportToMarkdown({
+    List<Task>? tasks,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+  }) async {
+    final exportTasks = tasks ?? _tasks;
+
+    // Apply date range filter if specified
+    var filteredTasks = exportTasks;
+    if (dateFrom != null || dateTo != null) {
+      filteredTasks = exportTasks.where((t) {
+        if (t.dueDate == null) return false;
+        if (dateFrom != null && t.dueDate!.isBefore(dateFrom)) return false;
+        if (dateTo != null && t.dueDate!.isAfter(dateTo)) return false;
+        return true;
+      }).toList();
+    }
+
+    final buffer = StringBuffer();
+    final dateFormat = 'yyyy-MM-dd HH:mm';
+
+    buffer.writeln('# 任务导出');
+    buffer.writeln();
+    buffer.writeln('> 导出时间: ${_formatDate(DateTime.now(), dateFormat)}');
+    buffer.writeln();
+    buffer.writeln('---');
+    buffer.writeln();
+
+    // 按状态分组
+    final activeTasks = filteredTasks.where((t) => !t.isCompleted).toList();
+    final completedTasks = filteredTasks.where((t) => t.isCompleted).toList();
+
+    if (activeTasks.isNotEmpty) {
+      buffer.writeln('## 进行中的任务 (${activeTasks.length})');
+      buffer.writeln();
+      for (final task in activeTasks) {
+        _writeTaskAsMarkdown(buffer, task, dateFormat);
+      }
+    }
+
+    if (completedTasks.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('## 已完成的任务 (${completedTasks.length})');
+      buffer.writeln();
+      for (final task in completedTasks) {
+        _writeTaskAsMarkdown(buffer, task, dateFormat);
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  void _writeTaskAsMarkdown(StringBuffer buffer, Task task, String dateFormat) {
+    buffer.writeln('### ${task.title}');
+    if (task.description != null && task.description!.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('${task.description}');
+    }
+    buffer.writeln();
+    buffer.writeln('- 优先级: ${task.priority.label}');
+    buffer.writeln('- 分类: ${task.category.label}');
+    if (task.dueDate != null) {
+      buffer.writeln('- 截止日期: ${_formatDate(task.dueDate!, dateFormat)}');
+    }
+    if (task.customTagIds.isNotEmpty) {
+      buffer.writeln('- 标签: ${task.customTagIds.join(", ")}');
+    }
+    if (task.isCompleted && task.completedAt != null) {
+      buffer.writeln('- 完成时间: ${_formatDate(task.completedAt!, dateFormat)}');
+    }
+    buffer.writeln('- 创建时间: ${_formatDate(task.createdAt, dateFormat)}');
+    buffer.writeln();
+  }
+
+  String _escapeCsv(String value) {
+    if (value.contains(',') || value.contains('"') || value.contains('\n')) {
+      return '"${value.replaceAll('"', '""')}"';
+    }
+    return value;
+  }
+
+  String _formatDate(DateTime date, String format) {
+    // Simple date formatting
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
   Future<TaskDataBundle?> importTaskBackup(String filePath) {
     return _taskDataUseCase.importTaskBundle(filePath);
   }
@@ -603,6 +743,192 @@ class TaskProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 设置多标签筛选
+  void setTagFilters(List<String> tagIds) {
+    _tagFilters = tagIds;
+    notifyListeners();
+  }
+
+  /// 添加标签到筛选
+  void addTagToFilter(String tagId) {
+    if (!_tagFilters.contains(tagId)) {
+      _tagFilters.add(tagId);
+      notifyListeners();
+    }
+  }
+
+  /// 从筛选中移除标签
+  void removeTagFromFilter(String tagId) {
+    _tagFilters.remove(tagId);
+    notifyListeners();
+  }
+
+  /// 清除所有标签筛选
+  void clearTagFilters() {
+    _tagFilters.clear();
+    _tagFilter = null;
+    notifyListeners();
+  }
+
+  /// 设置标签筛选模式
+  void setTagFilterMode(TagFilterMode mode) {
+    _tagFilterMode = mode;
+    notifyListeners();
+  }
+
+  /// 设置日期范围筛选
+  void setDateRangeFilter(DateTime? from, DateTime? to) {
+    _dateFrom = from;
+    _dateTo = to;
+    notifyListeners();
+  }
+
+  /// 清除日期范围筛选
+  void clearDateRangeFilter() {
+    _dateFrom = null;
+    _dateTo = null;
+    notifyListeners();
+  }
+
+  // ============= 批量操作 =============
+
+  /// 批量完成/取消完成任务
+  Future<void> batchToggleCompletion(List<String> taskIds, {bool? markAsComplete}) async {
+    for (final id in taskIds) {
+      final task = getTaskById(id);
+      if (task == null) continue;
+
+      final shouldComplete = markAsComplete ?? !task.isCompleted;
+      if (shouldComplete && !task.isCompleted) {
+        // 检查依赖
+        if (!canCompleteTask(id)) {
+          continue;
+        }
+      }
+
+      final index = _tasks.indexWhere((t) => t.id == id);
+      if (index != -1) {
+        final updatedTask = _tasks[index].copyWith(
+          isCompleted: shouldComplete,
+          completedAt: shouldComplete ? DateTime.now() : null,
+        );
+        _tasks[index] = updatedTask;
+
+        if (shouldComplete) {
+          await _notificationService.cancelReminder(id);
+        }
+      }
+    }
+    await _taskDataUseCase.persistTasks(_tasks);
+    notifyListeners();
+  }
+
+  /// 批量删除任务（移到回收站）
+  Future<void> batchDelete(List<String> taskIds) async {
+    for (final id in taskIds) {
+      await deleteTask(id);
+    }
+  }
+
+  /// 批量永久删除任务
+  Future<void> batchPermanentDelete(List<String> taskIds) async {
+    for (final id in taskIds) {
+      await deleteTask(id, permanent: true);
+    }
+  }
+
+  /// 批量恢复任务
+  Future<void> batchRestore(List<String> taskIds) async {
+    for (final id in taskIds) {
+      await restoreTask(id);
+    }
+  }
+
+  /// 批量移动到分组
+  Future<void> batchMoveToGroup(List<String> taskIds, String? groupId) async {
+    for (final id in taskIds) {
+      final index = _tasks.indexWhere((t) => t.id == id);
+      if (index != -1) {
+        _tasks[index] = _tasks[index].copyWith(groupId: groupId);
+      }
+    }
+    await _taskDataUseCase.persistTasks(_tasks);
+    notifyListeners();
+  }
+
+  /// 批量添加标签
+  Future<void> batchAddTags(List<String> taskIds, List<String> tagIds) async {
+    for (final id in taskIds) {
+      final index = _tasks.indexWhere((t) => t.id == id);
+      if (index != -1) {
+        final currentTagIds = List<String>.from(_tasks[index].customTagIds);
+        for (final tagId in tagIds) {
+          if (!currentTagIds.contains(tagId)) {
+            currentTagIds.add(tagId);
+          }
+        }
+        _tasks[index] = _tasks[index].copyWith(customTagIds: currentTagIds);
+      }
+    }
+    await _taskDataUseCase.persistTasks(_tasks);
+    notifyListeners();
+  }
+
+  /// 批量移除标签
+  Future<void> batchRemoveTags(List<String> taskIds, List<String> tagIds) async {
+    for (final id in taskIds) {
+      final index = _tasks.indexWhere((t) => t.id == id);
+      if (index != -1) {
+        final currentTagIds = List<String>.from(_tasks[index].customTagIds);
+        currentTagIds.removeWhere((tagId) => tagIds.contains(tagId));
+        _tasks[index] = _tasks[index].copyWith(customTagIds: currentTagIds);
+      }
+    }
+    await _taskDataUseCase.persistTasks(_tasks);
+    notifyListeners();
+  }
+
+  /// 批量更新优先级
+  Future<void> batchUpdatePriority(List<String> taskIds, Priority priority) async {
+    for (final id in taskIds) {
+      final index = _tasks.indexWhere((t) => t.id == id);
+      if (index != -1) {
+        _tasks[index] = _tasks[index].copyWith(priority: priority);
+      }
+    }
+    await _taskDataUseCase.persistTasks(_tasks);
+    notifyListeners();
+  }
+
+  /// 批量更新截止日期
+  Future<void> batchUpdateDueDate(List<String> taskIds, DateTime? dueDate) async {
+    for (final id in taskIds) {
+      final index = _tasks.indexWhere((t) => t.id == id);
+      if (index != -1) {
+        _tasks[index] = _tasks[index].copyWith(dueDate: dueDate);
+      }
+    }
+    await _taskDataUseCase.persistTasks(_tasks);
+    notifyListeners();
+  }
+
+  /// 重新排序任务
+  Future<void> reorderTasks(int oldIndex, int newIndex) async {
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final task = _tasks.removeAt(oldIndex);
+    _tasks.insert(newIndex, task);
+
+    // 更新 sortOrder
+    for (var i = 0; i < _tasks.length; i++) {
+      _tasks[i] = _tasks[i].copyWith(sortOrder: i);
+    }
+
+    await _taskDataUseCase.persistTasks(_tasks);
+    notifyListeners();
+  }
+
   void setSearchQuery(String query) {
     _searchQuery = query;
     notifyListeners();
@@ -692,9 +1018,39 @@ class TaskProvider extends ChangeNotifier {
       result = result.where((t) => t.groupId == _groupFilter).toList();
     }
 
-    // Apply tag filter
+    // Apply tag filter (single tag)
     if (_tagFilter != null) {
       result = result.where((t) => t.customTagIds.contains(_tagFilter)).toList();
+    }
+
+    // Apply multiple tag filter
+    if (_tagFilters.isNotEmpty) {
+      if (_tagFilterMode == TagFilterMode.and) {
+        // AND mode: task must have ALL selected tags
+        result = result.where((t) =>
+            _tagFilters.every((tagId) => t.customTagIds.contains(tagId))).toList();
+      } else {
+        // OR mode: task must have ANY of the selected tags
+        result = result.where((t) =>
+            t.customTagIds.any((tagId) => _tagFilters.contains(tagId))).toList();
+      }
+    }
+
+    // Apply date range filter
+    if (_dateFrom != null || _dateTo != null) {
+      result = result.where((t) {
+        if (t.dueDate == null) return false;
+        final dueDate = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+        if (_dateFrom != null) {
+          final from = DateTime(_dateFrom!.year, _dateFrom!.month, _dateFrom!.day);
+          if (dueDate.isBefore(from)) return false;
+        }
+        if (_dateTo != null) {
+          final to = DateTime(_dateTo!.year, _dateTo!.month, _dateTo!.day);
+          if (dueDate.isAfter(to)) return false;
+        }
+        return true;
+      }).toList();
     }
 
     // Apply search filter
@@ -738,5 +1094,33 @@ class TaskProvider extends ChangeNotifier {
     });
 
     return result;
+  }
+
+  /// 获取搜索高亮文本片段
+  /// 返回包含匹配范围的列表，每项是 (start, end) 索引
+  List<List<int>> getHighlightRanges(String text) {
+    if (_searchQuery.isEmpty) return [];
+
+    final ranges = <List<int>>[];
+    final lowerText = text.toLowerCase();
+    final lowerQuery = _searchQuery.toLowerCase();
+    var startIndex = 0;
+
+    while (true) {
+      final index = lowerText.indexOf(lowerQuery, startIndex);
+      if (index == -1) break;
+      ranges.add([index, index + _searchQuery.length]);
+      startIndex = index + _searchQuery.length;
+    }
+
+    return ranges;
+  }
+
+  /// 检查任务是否匹配当前搜索查询
+  bool taskMatchesSearch(Task task) {
+    if (_searchQuery.isEmpty) return true;
+    final query = _searchQuery.toLowerCase();
+    return task.title.toLowerCase().contains(query) ||
+        (task.description?.toLowerCase().contains(query) ?? false);
   }
 }

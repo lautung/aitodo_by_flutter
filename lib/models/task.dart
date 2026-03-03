@@ -283,10 +283,12 @@ class Task {
   final String? parentId;
   final List<SubTask> subtasks;
   final DateTime? reminderTime;
+  final List<int> reminderMinutesBefore; // 提前提醒分钟数列表，如 [1440, 60, 15] 表示提前1天、1小时、15分钟提醒
   final List<String> customTagIds; // 自定义标签ID列表
   final String? groupId; // 任务分组ID
   final List<String> prerequisiteIds; // 前置任务ID列表
   final CustomRepeat? customRepeat; // 自定义重复规则
+  final int sortOrder; // 排序顺序，用于拖拽排序
 
   double get subtaskProgress {
     if (subtasks.isEmpty) return 0;
@@ -313,10 +315,12 @@ class Task {
     this.parentId,
     this.subtasks = const [],
     this.reminderTime,
+    this.reminderMinutesBefore = const [],
     this.customTagIds = const [],
     this.groupId,
     this.prerequisiteIds = const [],
     this.customRepeat,
+    this.sortOrder = 0,
   });
 
   Task copyWith({
@@ -333,10 +337,12 @@ class Task {
     String? parentId,
     List<SubTask>? subtasks,
     DateTime? reminderTime,
+    List<int>? reminderMinutesBefore,
     List<String>? customTagIds,
     String? groupId,
     List<String>? prerequisiteIds,
     CustomRepeat? customRepeat,
+    int? sortOrder,
   }) {
     return Task(
       id: id ?? this.id,
@@ -352,6 +358,8 @@ class Task {
       parentId: parentId ?? this.parentId,
       subtasks: subtasks ?? this.subtasks,
       reminderTime: reminderTime ?? this.reminderTime,
+      sortOrder: sortOrder ?? this.sortOrder,
+      reminderMinutesBefore: reminderMinutesBefore ?? this.reminderMinutesBefore,
       customTagIds: customTagIds ?? this.customTagIds,
       groupId: groupId ?? this.groupId,
       prerequisiteIds: prerequisiteIds ?? this.prerequisiteIds,
@@ -374,10 +382,12 @@ class Task {
       'parentId': parentId,
       'subtasks': subtasks.map((s) => s.toJson()).toList(),
       'reminderTime': reminderTime?.toIso8601String(),
+      'reminderMinutesBefore': reminderMinutesBefore,
       'customTagIds': customTagIds,
       'groupId': groupId,
       'prerequisiteIds': prerequisiteIds,
       'customRepeat': customRepeat?.toJson(),
+      'sortOrder': sortOrder,
     };
   }
 
@@ -392,6 +402,11 @@ class Task {
     List<String> tagIds = [];
     if (json['customTagIds'] != null) {
       tagIds = List<String>.from(json['customTagIds'] as List);
+    }
+
+    List<int> reminderMinutesBeforeList = [];
+    if (json['reminderMinutesBefore'] != null) {
+      reminderMinutesBeforeList = List<int>.from(json['reminderMinutesBefore'] as List);
     }
 
     List<String> prerequisiteIdsList = [];
@@ -427,9 +442,11 @@ class Task {
       reminderTime: json['reminderTime'] != null
           ? DateTime.parse(json['reminderTime'] as String)
           : null,
+      reminderMinutesBefore: reminderMinutesBeforeList,
       groupId: json['groupId'] as String?,
       prerequisiteIds: prerequisiteIdsList,
       customRepeat: customRepeatData,
+      sortOrder: json['sortOrder'] as int? ?? 0,
     );
   }
 }
