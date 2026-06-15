@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task.dart';
@@ -18,10 +20,11 @@ class TaskProvider extends ChangeNotifier {
     TaskRepository? taskRepository,
     NotificationService? notificationService,
     Uuid? uuid,
-  })  : _taskDataUseCase = taskDataUseCase ??
-            TaskDataUseCase(taskRepository ?? LocalTaskRepository()),
-        _notificationService = notificationService ?? NotificationService(),
-        _uuid = uuid ?? const Uuid();
+  }) : _taskDataUseCase =
+           taskDataUseCase ??
+           TaskDataUseCase(taskRepository ?? LocalTaskRepository()),
+       _notificationService = notificationService ?? NotificationService(),
+       _uuid = uuid ?? const Uuid();
 
   List<Task> _tasks = [];
   List<Task> _deletedTasks = []; // 回收站
@@ -36,9 +39,9 @@ class TaskProvider extends ChangeNotifier {
   String _searchQuery = '';
   TaskSortType _sortType = TaskSortType.createdTime;
   bool _sortAscending = false;
-  StatsTimeFilter _statsTimeFilter = StatsTimeFilter.all;  // 统计时间范围
-  DateTime? _customStatsStartDate;  // 自定义统计开始日期
-  DateTime? _customStatsEndDate;    // 自定义统计结束日期
+  StatsTimeFilter _statsTimeFilter = StatsTimeFilter.all; // 统计时间范围
+  DateTime? _customStatsStartDate; // 自定义统计开始日期
+  DateTime? _customStatsEndDate; // 自定义统计结束日期
 
   List<Task> get tasks => _getFilteredTasks();
   List<Task> get allTasks => List.unmodifiable(_tasks);
@@ -96,11 +99,13 @@ class TaskProvider extends ChangeNotifier {
       final dayEnd = dayStart.add(const Duration(days: 1));
 
       final count = _tasks
-          .where((t) =>
-              t.isCompleted &&
-              t.completedAt != null &&
-              t.completedAt!.isAfter(dayStart) &&
-              t.completedAt!.isBefore(dayEnd))
+          .where(
+            (t) =>
+                t.isCompleted &&
+                t.completedAt != null &&
+                t.completedAt!.isAfter(dayStart) &&
+                t.completedAt!.isBefore(dayEnd),
+          )
           .length;
       result.add(count);
     }
@@ -120,11 +125,13 @@ class TaskProvider extends ChangeNotifier {
       final dayEnd = dayStart.add(const Duration(days: 1));
 
       final count = _tasks
-          .where((t) =>
-              t.isCompleted &&
-              t.completedAt != null &&
-              t.completedAt!.isAfter(dayStart) &&
-              t.completedAt!.isBefore(dayEnd))
+          .where(
+            (t) =>
+                t.isCompleted &&
+                t.completedAt != null &&
+                t.completedAt!.isAfter(dayStart) &&
+                t.completedAt!.isBefore(dayEnd),
+          )
           .length;
 
       result[dayStart] = count;
@@ -145,11 +152,13 @@ class TaskProvider extends ChangeNotifier {
 
       // 统计该日完成的任务数
       final completedCount = _tasks
-          .where((t) =>
-              t.isCompleted &&
-              t.completedAt != null &&
-              t.completedAt!.isAfter(dayStart) &&
-              t.completedAt!.isBefore(dayEnd))
+          .where(
+            (t) =>
+                t.isCompleted &&
+                t.completedAt != null &&
+                t.completedAt!.isAfter(dayStart) &&
+                t.completedAt!.isBefore(dayEnd),
+          )
           .length;
 
       result[dayStart] = completedCount;
@@ -164,11 +173,13 @@ class TaskProvider extends ChangeNotifier {
     final dayEnd = dayStart.add(const Duration(days: 1));
 
     return _tasks
-        .where((t) =>
-            t.isCompleted &&
-            t.completedAt != null &&
-            t.completedAt!.isAfter(dayStart) &&
-            t.completedAt!.isBefore(dayEnd))
+        .where(
+          (t) =>
+              t.isCompleted &&
+              t.completedAt != null &&
+              t.completedAt!.isAfter(dayStart) &&
+              t.completedAt!.isBefore(dayEnd),
+        )
         .toList();
   }
 
@@ -212,8 +223,12 @@ class TaskProvider extends ChangeNotifier {
       case StatsTimeFilter.today:
         final dayStart = today;
         final dayEnd = today.add(const Duration(days: 1));
-        return _tasks.where((t) =>
-            t.createdAt.isAfter(dayStart) && t.createdAt.isBefore(dayEnd)).toList();
+        return _tasks
+            .where(
+              (t) =>
+                  t.createdAt.isAfter(dayStart) && t.createdAt.isBefore(dayEnd),
+            )
+            .toList();
       case StatsTimeFilter.custom:
         if (_customStatsStartDate == null || _customStatsEndDate == null) {
           return _tasks;
@@ -228,8 +243,13 @@ class TaskProvider extends ChangeNotifier {
           _customStatsEndDate!.month,
           _customStatsEndDate!.day,
         ).add(const Duration(days: 1));
-        return _tasks.where((t) =>
-            t.createdAt.isAfter(startDate) && t.createdAt.isBefore(endDate)).toList();
+        return _tasks
+            .where(
+              (t) =>
+                  t.createdAt.isAfter(startDate) &&
+                  t.createdAt.isBefore(endDate),
+            )
+            .toList();
     }
   }
 
@@ -239,14 +259,16 @@ class TaskProvider extends ChangeNotifier {
       _filteredTasksByTime.where((t) => t.isCompleted).length;
   int get filteredActiveTasks =>
       _filteredTasksByTime.where((t) => !t.isCompleted).length;
-  double get filteredCompletionRate =>
-      filteredTotalTasks > 0 ? filteredCompletedTasks / filteredTotalTasks : 0.0;
+  double get filteredCompletionRate => filteredTotalTasks > 0
+      ? filteredCompletedTasks / filteredTotalTasks
+      : 0.0;
 
   Map<TaskCategory, int> get filteredTasksByCategory {
     final Map<TaskCategory, int> result = {};
     for (final category in TaskCategory.values) {
-      result[category] =
-          _filteredTasksByTime.where((t) => t.category == category).length;
+      result[category] = _filteredTasksByTime
+          .where((t) => t.category == category)
+          .length;
     }
     return result;
   }
@@ -334,7 +356,9 @@ class TaskProvider extends ChangeNotifier {
 
     _tasks.add(task);
     await _taskDataUseCase.persistTasks(_tasks);
-    if (!task.isCompleted && task.reminderTime != null && task.dueDate != null) {
+    if (!task.isCompleted &&
+        task.reminderTime != null &&
+        task.dueDate != null) {
       await _notificationService.scheduleTaskReminder(task);
     }
     notifyListeners();
@@ -350,7 +374,9 @@ class TaskProvider extends ChangeNotifier {
 
       // 任务更新后先取消旧提醒，再根据新配置重建提醒。
       await _notificationService.cancelReminder(previousTask.id);
-      if (!task.isCompleted && task.reminderTime != null && task.dueDate != null) {
+      if (!task.isCompleted &&
+          task.reminderTime != null &&
+          task.dueDate != null) {
         await _notificationService.scheduleTaskReminder(task);
       }
 
@@ -373,8 +399,16 @@ class TaskProvider extends ChangeNotifier {
     }
     await _taskDataUseCase.persistTasks(_tasks);
     await _taskDataUseCase.persistDeletedTasks(_deletedTasks);
-    await _notificationService.cancelReminder(id);
     notifyListeners();
+    unawaited(_cancelReminderSafely(id));
+  }
+
+  Future<void> _cancelReminderSafely(String id) async {
+    try {
+      await _notificationService.cancelReminder(id);
+    } catch (_) {
+      return;
+    }
   }
 
   /// 从回收站恢复任务
@@ -384,7 +418,9 @@ class TaskProvider extends ChangeNotifier {
       final task = _deletedTasks[taskIndex];
       _tasks.add(task);
       _deletedTasks.removeAt(taskIndex);
-      if (!task.isCompleted && task.reminderTime != null && task.dueDate != null) {
+      if (!task.isCompleted &&
+          task.reminderTime != null &&
+          task.dueDate != null) {
         await _notificationService.scheduleTaskReminder(task);
       }
     }
@@ -433,7 +469,8 @@ class TaskProvider extends ChangeNotifier {
 
       if (willComplete) {
         await _notificationService.cancelReminder(task.id);
-      } else if (updatedTask.reminderTime != null && updatedTask.dueDate != null) {
+      } else if (updatedTask.reminderTime != null &&
+          updatedTask.dueDate != null) {
         await _notificationService.scheduleTaskReminder(updatedTask);
       }
 
@@ -461,7 +498,9 @@ class TaskProvider extends ChangeNotifier {
 
     await _notificationService.cancelAllReminders();
     for (final task in _tasks) {
-      if (!task.isCompleted && task.reminderTime != null && task.dueDate != null) {
+      if (!task.isCompleted &&
+          task.reminderTime != null &&
+          task.dueDate != null) {
         await _notificationService.scheduleTaskReminder(task);
       }
     }
@@ -470,9 +509,7 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<void> mergeTasks(List<Task> importedTasks) async {
-    final mergedById = <String, Task>{
-      for (final task in _tasks) task.id: task,
-    };
+    final mergedById = <String, Task>{for (final task in _tasks) task.id: task};
     for (final task in importedTasks) {
       mergedById[task.id] = task;
     }
@@ -481,7 +518,9 @@ class TaskProvider extends ChangeNotifier {
 
     await _notificationService.cancelAllReminders();
     for (final task in _tasks) {
-      if (!task.isCompleted && task.reminderTime != null && task.dueDate != null) {
+      if (!task.isCompleted &&
+          task.reminderTime != null &&
+          task.dueDate != null) {
         await _notificationService.scheduleTaskReminder(task);
       }
     }
@@ -534,7 +573,9 @@ class TaskProvider extends ChangeNotifier {
       final createdAt = _formatDate(task.createdAt, dateFormat);
       final tags = task.customTagIds.join(';');
 
-      buffer.writeln('$title,$description,$priority,$category,$dueDate,$status,$createdAt,$tags');
+      buffer.writeln(
+        '$title,$description,$priority,$category,$dueDate,$status,$createdAt,$tags',
+      );
     }
 
     return buffer.toString();
@@ -652,7 +693,9 @@ class TaskProvider extends ChangeNotifier {
           break;
         case RepeatType.custom:
           if (originalTask.customRepeat != null) {
-            nextDueDate = originalTask.customRepeat!.getNextDate(originalTask.dueDate!);
+            nextDueDate = originalTask.customRepeat!.getNextDate(
+              originalTask.dueDate!,
+            );
           }
           break;
         case RepeatType.none:
@@ -793,7 +836,10 @@ class TaskProvider extends ChangeNotifier {
   // ============= 批量操作 =============
 
   /// 批量完成/取消完成任务
-  Future<void> batchToggleCompletion(List<String> taskIds, {bool? markAsComplete}) async {
+  Future<void> batchToggleCompletion(
+    List<String> taskIds, {
+    bool? markAsComplete,
+  }) async {
     for (final id in taskIds) {
       final task = getTaskById(id);
       if (task == null) continue;
@@ -875,7 +921,10 @@ class TaskProvider extends ChangeNotifier {
   }
 
   /// 批量移除标签
-  Future<void> batchRemoveTags(List<String> taskIds, List<String> tagIds) async {
+  Future<void> batchRemoveTags(
+    List<String> taskIds,
+    List<String> tagIds,
+  ) async {
     for (final id in taskIds) {
       final index = _tasks.indexWhere((t) => t.id == id);
       if (index != -1) {
@@ -889,7 +938,10 @@ class TaskProvider extends ChangeNotifier {
   }
 
   /// 批量更新优先级
-  Future<void> batchUpdatePriority(List<String> taskIds, Priority priority) async {
+  Future<void> batchUpdatePriority(
+    List<String> taskIds,
+    Priority priority,
+  ) async {
     for (final id in taskIds) {
       final index = _tasks.indexWhere((t) => t.id == id);
       if (index != -1) {
@@ -901,7 +953,10 @@ class TaskProvider extends ChangeNotifier {
   }
 
   /// 批量更新截止日期
-  Future<void> batchUpdateDueDate(List<String> taskIds, DateTime? dueDate) async {
+  Future<void> batchUpdateDueDate(
+    List<String> taskIds,
+    DateTime? dueDate,
+  ) async {
     for (final id in taskIds) {
       final index = _tasks.indexWhere((t) => t.id == id);
       if (index != -1) {
@@ -942,13 +997,17 @@ class TaskProvider extends ChangeNotifier {
   /// 获取指定多个标签的任务（任一匹配）
   List<Task> getTasksByTags(List<String> tagIds) {
     if (tagIds.isEmpty) return [];
-    return _tasks.where((t) => t.customTagIds.any((tagId) => tagIds.contains(tagId))).toList();
+    return _tasks
+        .where((t) => t.customTagIds.any((tagId) => tagIds.contains(tagId)))
+        .toList();
   }
 
   /// 获取指定多个标签的任务（全部匹配）
   List<Task> getTasksByAllTags(List<String> tagIds) {
     if (tagIds.isEmpty) return _tasks;
-    return _tasks.where((t) => tagIds.every((tagId) => t.customTagIds.contains(tagId))).toList();
+    return _tasks
+        .where((t) => tagIds.every((tagId) => t.customTagIds.contains(tagId)))
+        .toList();
   }
 
   // ============= Task Dependencies =============
@@ -1020,19 +1079,28 @@ class TaskProvider extends ChangeNotifier {
 
     // Apply tag filter (single tag)
     if (_tagFilter != null) {
-      result = result.where((t) => t.customTagIds.contains(_tagFilter)).toList();
+      result = result
+          .where((t) => t.customTagIds.contains(_tagFilter))
+          .toList();
     }
 
     // Apply multiple tag filter
     if (_tagFilters.isNotEmpty) {
       if (_tagFilterMode == TagFilterMode.and) {
         // AND mode: task must have ALL selected tags
-        result = result.where((t) =>
-            _tagFilters.every((tagId) => t.customTagIds.contains(tagId))).toList();
+        result = result
+            .where(
+              (t) =>
+                  _tagFilters.every((tagId) => t.customTagIds.contains(tagId)),
+            )
+            .toList();
       } else {
         // OR mode: task must have ANY of the selected tags
-        result = result.where((t) =>
-            t.customTagIds.any((tagId) => _tagFilters.contains(tagId))).toList();
+        result = result
+            .where(
+              (t) => t.customTagIds.any((tagId) => _tagFilters.contains(tagId)),
+            )
+            .toList();
       }
     }
 
@@ -1040,9 +1108,17 @@ class TaskProvider extends ChangeNotifier {
     if (_dateFrom != null || _dateTo != null) {
       result = result.where((t) {
         if (t.dueDate == null) return false;
-        final dueDate = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+        final dueDate = DateTime(
+          t.dueDate!.year,
+          t.dueDate!.month,
+          t.dueDate!.day,
+        );
         if (_dateFrom != null) {
-          final from = DateTime(_dateFrom!.year, _dateFrom!.month, _dateFrom!.day);
+          final from = DateTime(
+            _dateFrom!.year,
+            _dateFrom!.month,
+            _dateFrom!.day,
+          );
           if (dueDate.isBefore(from)) return false;
         }
         if (_dateTo != null) {

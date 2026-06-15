@@ -39,4 +39,14 @@ class NotificationSettingsProvider extends ChangeNotifier {
     await prefs.setInt(_keyDailySummaryMinute, time.minute);
     notifyListeners();
   }
+
+  Future<void> resetToDefaults() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyDailySummaryEnabled);
+    await prefs.remove(_keyDailySummaryHour);
+    await prefs.remove(_keyDailySummaryMinute);
+    _isDailySummaryEnabled = false;
+    _dailySummaryTime = const TimeOfDay(hour: 20, minute: 0);
+    notifyListeners();
+  }
 }

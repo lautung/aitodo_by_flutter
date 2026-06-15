@@ -4,10 +4,7 @@ import 'package:ai_todo/models/task.dart';
 void main() {
   group('CustomRepeat', () {
     test('should create CustomRepeat with interval and unit', () {
-      final customRepeat = CustomRepeat(
-        interval: 3,
-        unit: RepeatUnit.day,
-      );
+      final customRepeat = CustomRepeat(interval: 3, unit: RepeatUnit.day);
 
       expect(customRepeat.interval, 3);
       expect(customRepeat.unit, RepeatUnit.day);
@@ -35,46 +32,31 @@ void main() {
     });
 
     test('description returns correct format for days', () {
-      final customRepeat = CustomRepeat(
-        interval: 2,
-        unit: RepeatUnit.day,
-      );
+      final customRepeat = CustomRepeat(interval: 2, unit: RepeatUnit.day);
 
       expect(customRepeat.description, '每2天');
     });
 
     test('description returns correct format for single interval', () {
-      final customRepeat = CustomRepeat(
-        interval: 1,
-        unit: RepeatUnit.day,
-      );
+      final customRepeat = CustomRepeat(interval: 1, unit: RepeatUnit.day);
 
       expect(customRepeat.description, '每天');
     });
 
     test('description returns correct format for weeks', () {
-      final customRepeat = CustomRepeat(
-        interval: 3,
-        unit: RepeatUnit.week,
-      );
+      final customRepeat = CustomRepeat(interval: 3, unit: RepeatUnit.week);
 
       expect(customRepeat.description, '每3周');
     });
 
     test('description returns correct format for months', () {
-      final customRepeat = CustomRepeat(
-        interval: 2,
-        unit: RepeatUnit.month,
-      );
+      final customRepeat = CustomRepeat(interval: 2, unit: RepeatUnit.month);
 
       expect(customRepeat.description, '每2月');
     });
 
     test('getNextDate returns correct date for days', () {
-      final customRepeat = CustomRepeat(
-        interval: 2,
-        unit: RepeatUnit.day,
-      );
+      final customRepeat = CustomRepeat(interval: 2, unit: RepeatUnit.day);
       final currentDate = DateTime(2025, 1, 15);
 
       final nextDate = customRepeat.getNextDate(currentDate);
@@ -83,10 +65,7 @@ void main() {
     });
 
     test('getNextDate returns correct date for weeks', () {
-      final customRepeat = CustomRepeat(
-        interval: 2,
-        unit: RepeatUnit.week,
-      );
+      final customRepeat = CustomRepeat(interval: 2, unit: RepeatUnit.week);
       final currentDate = DateTime(2025, 1, 15);
 
       final nextDate = customRepeat.getNextDate(currentDate);
@@ -95,10 +74,7 @@ void main() {
     });
 
     test('getNextDate returns correct date for months', () {
-      final customRepeat = CustomRepeat(
-        interval: 1,
-        unit: RepeatUnit.month,
-      );
+      final customRepeat = CustomRepeat(interval: 1, unit: RepeatUnit.month);
       final currentDate = DateTime(2025, 1, 15);
 
       final nextDate = customRepeat.getNextDate(currentDate);
@@ -107,10 +83,7 @@ void main() {
     });
 
     test('getNextDate handles month end correctly', () {
-      final customRepeat = CustomRepeat(
-        interval: 1,
-        unit: RepeatUnit.month,
-      );
+      final customRepeat = CustomRepeat(interval: 1, unit: RepeatUnit.month);
       final currentDate = DateTime(2025, 1, 31);
 
       final nextDate = customRepeat.getNextDate(currentDate);
@@ -140,15 +113,9 @@ void main() {
     });
 
     test('copyWith creates new instance with updated values', () {
-      final original = CustomRepeat(
-        interval: 1,
-        unit: RepeatUnit.day,
-      );
+      final original = CustomRepeat(interval: 1, unit: RepeatUnit.day);
 
-      final updated = original.copyWith(
-        interval: 5,
-        unit: RepeatUnit.month,
-      );
+      final updated = original.copyWith(interval: 5, unit: RepeatUnit.month);
 
       expect(updated.interval, 5);
       expect(updated.unit, RepeatUnit.month);

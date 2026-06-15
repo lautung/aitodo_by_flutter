@@ -167,28 +167,26 @@ class PomodoroProvider extends ChangeNotifier {
   int get todayPomodoros {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    return _history
-        .where((r) => r.timestamp.isAfter(today))
-        .length;
+    return _history.where((r) => r.timestamp.isAfter(today)).length;
   }
 
   /// 获取本周番茄钟数量
   int get weekPomodoros {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final startOfWeek = DateTime(weekStart.year, weekStart.month, weekStart.day);
-    return _history
-        .where((r) => r.timestamp.isAfter(startOfWeek))
-        .length;
+    final startOfWeek = DateTime(
+      weekStart.year,
+      weekStart.month,
+      weekStart.day,
+    );
+    return _history.where((r) => r.timestamp.isAfter(startOfWeek)).length;
   }
 
   /// 获取本月番茄钟数量
   int get monthPomodoros {
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
-    return _history
-        .where((r) => r.timestamp.isAfter(startOfMonth))
-        .length;
+    return _history.where((r) => r.timestamp.isAfter(startOfMonth)).length;
   }
 
   /// 获取总番茄钟数量
@@ -199,18 +197,24 @@ class PomodoroProvider extends ChangeNotifier {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     return _history
-        .where((r) => r.timestamp.isAfter(today))
-        .fold(0, (sum, r) => sum + r.duration) ~/ 60;
+            .where((r) => r.timestamp.isAfter(today))
+            .fold(0, (sum, r) => sum + r.duration) ~/
+        60;
   }
 
   /// 获取本周专注分钟数
   int get weekFocusMinutes {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final startOfWeek = DateTime(weekStart.year, weekStart.month, weekStart.day);
+    final startOfWeek = DateTime(
+      weekStart.year,
+      weekStart.month,
+      weekStart.day,
+    );
     return _history
-        .where((r) => r.timestamp.isAfter(startOfWeek))
-        .fold(0, (sum, r) => sum + r.duration) ~/ 60;
+            .where((r) => r.timestamp.isAfter(startOfWeek))
+            .fold(0, (sum, r) => sum + r.duration) ~/
+        60;
   }
 
   /// 获取本月专注分钟数
@@ -218,8 +222,9 @@ class PomodoroProvider extends ChangeNotifier {
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
     return _history
-        .where((r) => r.timestamp.isAfter(startOfMonth))
-        .fold(0, (sum, r) => sum + r.duration) ~/ 60;
+            .where((r) => r.timestamp.isAfter(startOfMonth))
+            .fold(0, (sum, r) => sum + r.duration) ~/
+        60;
   }
 
   /// 获取总专注分钟数
@@ -230,8 +235,7 @@ class PomodoroProvider extends ChangeNotifier {
   /// 获取指定日期范围的番茄钟数量
   int getPomodorosInRange(DateTime start, DateTime end) {
     return _history
-        .where((r) =>
-            r.timestamp.isAfter(start) && r.timestamp.isBefore(end))
+        .where((r) => r.timestamp.isAfter(start) && r.timestamp.isBefore(end))
         .length;
   }
 
@@ -244,8 +248,9 @@ class PomodoroProvider extends ChangeNotifier {
       final date = DateTime(now.year, now.month, now.day - i);
       final nextDate = date.add(const Duration(days: 1));
       result[date] = _history
-          .where((r) =>
-              r.timestamp.isAfter(date) && r.timestamp.isBefore(nextDate))
+          .where(
+            (r) => r.timestamp.isAfter(date) && r.timestamp.isBefore(nextDate),
+          )
           .length;
     }
 
@@ -255,8 +260,9 @@ class PomodoroProvider extends ChangeNotifier {
   /// 获取任务专注时间（分钟）
   int getFocusTimeForTask(String taskId) {
     return _history
-        .where((r) => r.taskId == taskId)
-        .fold(0, (sum, r) => sum + r.duration) ~/ 60;
+            .where((r) => r.taskId == taskId)
+            .fold(0, (sum, r) => sum + r.duration) ~/
+        60;
   }
 
   /// 加载历史记录
@@ -289,11 +295,13 @@ class PomodoroProvider extends ChangeNotifier {
 
   /// 添加番茄钟记录
   void _addRecord({String? taskId, required int duration}) {
-    _history.add(PomodoroRecord(
-      timestamp: DateTime.now(),
-      taskId: taskId,
-      duration: duration,
-    ));
+    _history.add(
+      PomodoroRecord(
+        timestamp: DateTime.now(),
+        taskId: taskId,
+        duration: duration,
+      ),
+    );
     _saveHistory();
   }
 
@@ -301,6 +309,18 @@ class PomodoroProvider extends ChangeNotifier {
   Future<void> clearHistory() async {
     _history.clear();
     await _saveHistory();
+    notifyListeners();
+  }
+
+  Future<void> resetAllData() async {
+    _timer?.cancel();
+    _state = PomodoroState.idle;
+    _completedPomodoros = 0;
+    _currentTaskId = null;
+    _history.clear();
+    remainingSeconds = workDuration;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_historyKey);
     notifyListeners();
   }
 }

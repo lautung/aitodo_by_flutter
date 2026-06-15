@@ -16,4 +16,3 @@ abstract class TaskRepository {
 
   Future<TaskDataBundle?> importTaskBundle(String filePath);
 }
-

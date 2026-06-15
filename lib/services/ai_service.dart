@@ -83,13 +83,21 @@ class NLPService {
 
     // 周X 相关解析
     final weekDays = {
-      '周一': 1, '星期一': 1,
-      '周二': 2, '星期二': 2,
-      '周三': 3, '星期三': 3,
-      '周四': 4, '星期四': 4,
-      '周五': 5, '星期五': 5,
-      '周六': 6, '星期六': 6,
-      '周日': 7, '星期天': 7, '周末': 6,
+      '周一': 1,
+      '星期一': 1,
+      '周二': 2,
+      '星期二': 2,
+      '周三': 3,
+      '星期三': 3,
+      '周四': 4,
+      '星期四': 4,
+      '周五': 5,
+      '星期五': 5,
+      '周六': 6,
+      '星期六': 6,
+      '周日': 7,
+      '星期天': 7,
+      '周末': 6,
     };
 
     for (final entry in weekDays.entries) {
@@ -157,7 +165,10 @@ class NLPService {
     final priority = parsePriority(cleanText);
 
     // 智能分类建议
-    final suggestedCategory = ClassificationService.suggestCategory(cleanText, null);
+    final suggestedCategory = ClassificationService.suggestCategory(
+      cleanText,
+      null,
+    );
 
     // 提取标题和描述
     // 格式：标题 - 描述 或 标题：描述
@@ -181,9 +192,7 @@ class NLPService {
     }
 
     if (priority != null) {
-      title = title
-          .replaceAll(RegExp(r'(紧急|重要|高优先级|急|不急|低优先级)'), '')
-          .trim();
+      title = title.replaceAll(RegExp(r'(紧急|重要|高优先级|急|不急|低优先级)'), '').trim();
     }
 
     // 清理多余符号

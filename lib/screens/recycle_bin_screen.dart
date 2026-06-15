@@ -54,26 +54,16 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.delete_outline,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
+                  Icon(Icons.delete_outline, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
                     '回收站为空',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '删除的任务会在这里显示',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                   ),
                 ],
               ),
@@ -99,20 +89,14 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: ListTile(
-        leading: Icon(
-          task.category.icon,
-          color: task.category.color,
-        ),
+        leading: Icon(task.category.icon, color: task.category.color),
         title: Text(
           task.title,
           style: const TextStyle(decoration: TextDecoration.lineThrough),
         ),
         subtitle: Text(
           '创建于 ${dateFormat.format(task.createdAt)}',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[500],
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -122,19 +106,22 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
               tooltip: '恢复',
               onPressed: () {
                 context.read<TaskProvider>().restoreTask(task.id);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('任务已恢复')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('任务已恢复')));
               },
             ),
             IconButton(
               icon: const Icon(Icons.delete_forever, color: Colors.red),
               tooltip: '永久删除',
               onPressed: () {
-                context.read<TaskProvider>().deleteTask(task.id, permanent: true);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('任务已永久删除')),
+                context.read<TaskProvider>().deleteTask(
+                  task.id,
+                  permanent: true,
                 );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('任务已永久删除')));
               },
             ),
           ],
@@ -158,9 +145,9 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
             onPressed: () {
               context.read<TaskProvider>().clearDeletedTasks();
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('回收站已清空')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('回收站已清空')));
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('清空'),

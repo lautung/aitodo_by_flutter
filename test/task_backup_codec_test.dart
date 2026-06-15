@@ -17,10 +17,7 @@ void main() {
     );
 
     test('encode should output schemaVersion 2 payload', () {
-      final map = codec.encode(
-        tasks: [sampleTask],
-        deletedTasks: const [],
-      );
+      final map = codec.encode(tasks: [sampleTask], deletedTasks: const []);
 
       expect(map['schemaVersion'], 2);
       expect((map['tasks'] as List).length, 1);
@@ -55,4 +52,3 @@ void main() {
     });
   });
 }
-

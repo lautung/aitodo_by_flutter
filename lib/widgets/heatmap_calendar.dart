@@ -60,7 +60,9 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
 
     // 计算起始日期（weeksToShow 周前的周日）
     final startDate = today.subtract(Duration(days: today.weekday % 7));
-    final adjustedStart = startDate.subtract(Duration(days: (widget.weeksToShow - 1) * 7));
+    final adjustedStart = startDate.subtract(
+      Duration(days: (widget.weeksToShow - 1) * 7),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,9 +77,7 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
             _buildWeekdayLabels(),
             const SizedBox(width: 4),
             // 热力图网格
-            Expanded(
-              child: _buildHeatmapGrid(adjustedStart, today),
-            ),
+            Expanded(child: _buildHeatmapGrid(adjustedStart, today)),
           ],
         ),
         const SizedBox(height: 8),
@@ -100,10 +100,7 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
             width: 50,
             child: Text(
               DateFormat('M').format(currentDate),
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
             ),
           ),
         );
@@ -134,10 +131,7 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
             height: 14,
             child: Text(
               weekdays[index],
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
             ),
           );
         }
@@ -156,7 +150,9 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
       for (int day = 0; day < 7; day++) {
         final date = weekStart.add(Duration(days: day));
         final isFuture = date.isAfter(today);
-        final count = isFuture ? 0 : (widget.data[DateTime(date.year, date.month, date.day)] ?? 0);
+        final count = isFuture
+            ? 0
+            : (widget.data[DateTime(date.year, date.month, date.day)] ?? 0);
 
         days.add(
           GestureDetector(
@@ -170,12 +166,11 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
                 height: 12,
                 margin: const EdgeInsets.all(1),
                 decoration: BoxDecoration(
-                  color: isFuture ? Colors.grey[200] : HeatmapColors.getColorForCount(count),
+                  color: isFuture
+                      ? Colors.grey[200]
+                      : HeatmapColors.getColorForCount(count),
                   borderRadius: BorderRadius.circular(2),
-                  border: Border.all(
-                    color: Colors.grey[300]!,
-                    width: 0.5,
-                  ),
+                  border: Border.all(color: Colors.grey[300]!, width: 0.5),
                 ),
               ),
             ),
@@ -183,9 +178,7 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
         );
       }
 
-      weeks.add(
-        Column(children: days),
-      );
+      weeks.add(Column(children: days));
     }
 
     return SingleChildScrollView(
@@ -200,35 +193,22 @@ class _HeatmapCalendarState extends State<HeatmapCalendar> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Text(
-          '少',
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey[600],
+        Text('少', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+        const SizedBox(width: 4),
+        ...HeatmapColors.levels.map(
+          (color) => Container(
+            width: 12,
+            height: 12,
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+              border: Border.all(color: Colors.grey[300]!, width: 0.5),
+            ),
           ),
         ),
         const SizedBox(width: 4),
-        ...HeatmapColors.levels.map((color) => Container(
-              width: 12,
-              height: 12,
-              margin: const EdgeInsets.symmetric(horizontal: 1),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(2),
-                border: Border.all(
-                  color: Colors.grey[300]!,
-                  width: 0.5,
-                ),
-              ),
-            )),
-        const SizedBox(width: 4),
-        Text(
-          '多',
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text('多', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
       ],
     );
   }
@@ -265,11 +245,7 @@ class _YearCalendarState extends State<YearCalendar> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: [
-        _buildHeader(),
-        const SizedBox(height: 16),
-        _buildYearGrid(),
-      ],
+      children: [_buildHeader(), const SizedBox(height: 16), _buildYearGrid()],
     );
   }
 
@@ -283,10 +259,7 @@ class _YearCalendarState extends State<YearCalendar> {
         ),
         Text(
           '$_year 年',
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         IconButton(
           icon: const Icon(Icons.chevron_right),
@@ -350,7 +323,9 @@ class _YearCalendarState extends State<YearCalendar> {
               '$month 月',
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: isCurrentMonth ? FontWeight.bold : FontWeight.normal,
+                fontWeight: isCurrentMonth
+                    ? FontWeight.bold
+                    : FontWeight.normal,
                 color: isCurrentMonth
                     ? Theme.of(context).colorScheme.primary
                     : Colors.black87,
@@ -359,10 +334,7 @@ class _YearCalendarState extends State<YearCalendar> {
             const SizedBox(height: 4),
             Text(
               '$taskCount 任务',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -403,11 +375,7 @@ class _WeekCalendarState extends State<WeekCalendar> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: [
-        _buildHeader(),
-        const SizedBox(height: 16),
-        _buildWeekView(),
-      ],
+      children: [_buildHeader(), const SizedBox(height: 16), _buildWeekView()],
     );
   }
 
@@ -422,22 +390,23 @@ class _WeekCalendarState extends State<WeekCalendar> {
           icon: const Icon(Icons.chevron_left),
           onPressed: () {
             setState(() {
-              _currentWeekStart = _currentWeekStart.subtract(const Duration(days: 7));
+              _currentWeekStart = _currentWeekStart.subtract(
+                const Duration(days: 7),
+              );
             });
           },
         ),
         Text(
           '${formatter.format(_currentWeekStart)} - ${formatter.format(weekEnd)}',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         IconButton(
           icon: const Icon(Icons.chevron_right),
           onPressed: () {
             setState(() {
-              _currentWeekStart = _currentWeekStart.add(const Duration(days: 7));
+              _currentWeekStart = _currentWeekStart.add(
+                const Duration(days: 7),
+              );
             });
           },
         ),
@@ -467,10 +436,14 @@ class _WeekCalendarState extends State<WeekCalendar> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: isToday
-                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.1)
                     : (count > 0
-                        ? HeatmapColors.getColorForCount(count).withValues(alpha: 0.2)
-                        : Colors.grey[50]),
+                          ? HeatmapColors.getColorForCount(
+                              count,
+                            ).withValues(alpha: 0.2)
+                          : Colors.grey[50]),
                 borderRadius: BorderRadius.circular(8),
                 border: isToday
                     ? Border.all(
@@ -483,10 +456,7 @@ class _WeekCalendarState extends State<WeekCalendar> {
                 children: [
                   Text(
                     ['日', '一', '二', '三', '四', '五', '六'][date.weekday % 7],
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -497,8 +467,8 @@ class _WeekCalendarState extends State<WeekCalendar> {
                       color: isFuture
                           ? Colors.grey[400]
                           : (isToday
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.black87),
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.black87),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -562,9 +532,8 @@ class DayCalendar extends StatelessWidget {
 
   Widget _buildDateHeader(BuildContext context, LunarInfo lunarInfo) {
     final now = DateTime.now();
-    final isToday = date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
 
     return Card(
       elevation: 2,
@@ -577,7 +546,10 @@ class DayCalendar extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: isToday
                         ? Theme.of(context).colorScheme.primary
@@ -597,18 +569,12 @@ class DayCalendar extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               DateFormat('yyyy年MM月dd日').format(date),
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               '农历: ${lunarInfo.monthName}${lunarInfo.dayName} (${lunarInfo.zodiac}年)${lunarInfo.isLeapMonth ? " 闰月" : ""}',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
             if (lunarInfo.solarTerm != null || lunarInfo.festival != null)
               Padding(
@@ -663,10 +629,7 @@ class DayCalendar extends StatelessWidget {
                 SizedBox(width: 8),
                 Text(
                   '黄历',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -675,8 +638,18 @@ class DayCalendar extends StatelessWidget {
               children: [
                 _buildLuckIndicator(info.luck),
                 const SizedBox(width: 16),
-                Expanded(child: Text(info.chong, style: TextStyle(color: Colors.grey[600]))),
-                Expanded(child: Text(info.sha, style: TextStyle(color: Colors.grey[600]))),
+                Expanded(
+                  child: Text(
+                    info.chong,
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    info.sha,
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ),
               ],
             ),
             const Divider(height: 24),
@@ -689,7 +662,11 @@ class DayCalendar extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.check_circle, size: 14, color: Colors.green[600]),
+                          Icon(
+                            Icons.check_circle,
+                            size: 14,
+                            color: Colors.green[600],
+                          ),
                           const SizedBox(width: 4),
                           const Text(
                             '宜',
@@ -703,10 +680,7 @@ class DayCalendar extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         info.yi,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[700],
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                       ),
                     ],
                   ),
@@ -732,10 +706,7 @@ class DayCalendar extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         info.ji,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[700],
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                       ),
                     ],
                   ),
@@ -778,10 +749,7 @@ class DayCalendar extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             luck,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: color, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -802,7 +770,11 @@ class DayCalendar extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.task_alt, size: 18, color: Theme.of(context).colorScheme.primary),
+                Icon(
+                  Icons.task_alt,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   '任务概览',
@@ -813,9 +785,14 @@ class DayCalendar extends StatelessWidget {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -831,41 +808,46 @@ class DayCalendar extends StatelessWidget {
             ),
             if (tasks.isNotEmpty) ...[
               const Divider(height: 24),
-              ...tasks.map((task) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      task.isCompleted ? Icons.check_circle : Icons.circle_outlined,
-                      color: task.isCompleted ? Colors.green : Colors.grey,
+              ...tasks.map(
+                (task) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    task.isCompleted
+                        ? Icons.check_circle
+                        : Icons.circle_outlined,
+                    color: task.isCompleted ? Colors.green : Colors.grey,
+                  ),
+                  title: Text(
+                    task.title,
+                    style: TextStyle(
+                      decoration: task.isCompleted
+                          ? TextDecoration.lineThrough
+                          : null,
                     ),
-                    title: Text(
-                      task.title,
-                      style: TextStyle(
-                        decoration: task.isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
+                  ),
+                  trailing: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: task.category.color,
+                      shape: BoxShape.circle,
                     ),
-                    trailing: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: task.category.color,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  )),
+                  ),
+                ),
+              ),
             ] else
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Center(
                   child: Column(
                     children: [
-                      Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[400]),
-                      const SizedBox(height: 8),
-                      Text(
-                        '暂无任务',
-                        style: TextStyle(color: Colors.grey[600]),
+                      Icon(
+                        Icons.inbox_outlined,
+                        size: 48,
+                        color: Colors.grey[400],
                       ),
+                      const SizedBox(height: 8),
+                      Text('暂无任务', style: TextStyle(color: Colors.grey[600])),
                     ],
                   ),
                 ),
@@ -939,10 +921,7 @@ class _MonthlyCalendarState extends State<MonthlyCalendar> {
         ),
         Text(
           '$_year 年 $_month 月',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         IconButton(
           icon: const Icon(Icons.chevron_right),
@@ -983,18 +962,20 @@ class _MonthlyCalendarState extends State<MonthlyCalendar> {
     const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
     return Row(
       children: weekdays
-          .map((day) => Expanded(
-                child: Center(
-                  child: Text(
-                    day,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[600],
-                    ),
+          .map(
+            (day) => Expanded(
+              child: Center(
+                child: Text(
+                  day,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[600],
                   ),
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
     );
   }
@@ -1049,8 +1030,10 @@ class _MonthlyCalendarState extends State<MonthlyCalendar> {
                     color: isFuture
                         ? Colors.grey[100]
                         : (count > 0
-                            ? HeatmapColors.getColorForCount(count).withValues(alpha: 0.3)
-                            : Colors.grey[50]),
+                              ? HeatmapColors.getColorForCount(
+                                  count,
+                                ).withValues(alpha: 0.3)
+                              : Colors.grey[50]),
                     borderRadius: BorderRadius.circular(8),
                     border: isToday
                         ? Border.all(
@@ -1066,12 +1049,14 @@ class _MonthlyCalendarState extends State<MonthlyCalendar> {
                         '$dayCounter',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isToday
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                           color: isFuture
                               ? Colors.grey[400]
                               : (isToday
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Colors.black87),
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.black87),
                         ),
                       ),
                       if (lunarDay != null)

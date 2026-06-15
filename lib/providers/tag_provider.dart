@@ -88,6 +88,13 @@ class TagProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> resetToDefaults() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('custom_tags');
+    _tags = _getDefaultTags();
+    notifyListeners();
+  }
+
   CustomTag? getTagById(String id) {
     try {
       return _tags.firstWhere((t) => t.id == id);

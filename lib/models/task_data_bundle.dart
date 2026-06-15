@@ -11,4 +11,3 @@ class TaskDataBundle {
     this.deletedTasks = const [],
   });
 }
-

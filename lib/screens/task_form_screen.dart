@@ -7,6 +7,7 @@ import '../providers/tag_provider.dart';
 import '../providers/priority_provider.dart';
 import '../providers/ai_mode_provider.dart';
 import '../services/ai_dispatcher_service.dart';
+import '../services/notification_service.dart';
 
 class TaskFormScreen extends StatefulWidget {
   final Task? task;
@@ -26,7 +27,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   TaskCategory _category = TaskCategory.other;
   RepeatType _repeatType = RepeatType.none;
   bool _hasReminder = false;
-  DateTime? _reminderTime;  // 自定义提醒时间
+  DateTime? _reminderTime; // 自定义提醒时间
   List<String> _selectedTagIds = [];
 
   bool get isEditing => widget.task != null;
@@ -35,14 +36,16 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.task?.title ?? '');
-    _descriptionController = TextEditingController(text: widget.task?.description ?? '');
+    _descriptionController = TextEditingController(
+      text: widget.task?.description ?? '',
+    );
     if (widget.task != null) {
       _dueDate = widget.task!.dueDate;
       _priority = widget.task!.priority;
       _category = widget.task!.category;
       _repeatType = widget.task!.repeatType;
       _hasReminder = widget.task!.reminderTime != null;
-      _reminderTime = widget.task!.reminderTime;  // 加载已有提醒时间
+      _reminderTime = widget.task!.reminderTime; // 加载已有提醒时间
       _selectedTagIds = List<String>.from(widget.task!.customTagIds);
     }
   }
@@ -124,7 +127,11 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.lightbulb_outline, size: 16, color: Colors.blue.shade700),
+                  Icon(
+                    Icons.lightbulb_outline,
+                    size: 16,
+                    color: Colors.blue.shade700,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -157,10 +164,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             // Due date
             Text(
               '截止日期',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
             ),
             const SizedBox(height: 8),
             InkWell(
@@ -181,7 +185,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                           : '选择日期（可选）',
                       style: TextStyle(
                         fontSize: 16,
-                        color: _dueDate != null ? Colors.black87 : Colors.grey[600],
+                        color: _dueDate != null
+                            ? Colors.black87
+                            : Colors.grey[600],
                       ),
                     ),
                     const Spacer(),
@@ -202,19 +208,14 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             // Reminder settings
             Text(
               '提醒设置',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
             ),
             const SizedBox(height: 8),
             // Reminder switch
             SwitchListTile(
               title: const Text('启用提醒'),
               subtitle: Text(
-                _dueDate != null
-                    ? (_hasReminder ? '已开启' : '未开启')
-                    : '请先设置截止日期',
+                _dueDate != null ? (_hasReminder ? '已开启' : '未开启') : '请先设置截止日期',
               ),
               value: _hasReminder && _dueDate != null,
               onChanged: _dueDate != null
@@ -222,8 +223,12 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                       setState(() {
                         _hasReminder = value;
                         // 如果开启提醒且没有设置过提醒时间，默认设置为截止前15分钟
-                        if (value && _reminderTime == null && _dueDate != null) {
-                          _reminderTime = _dueDate!.subtract(const Duration(minutes: 15));
+                        if (value &&
+                            _reminderTime == null &&
+                            _dueDate != null) {
+                          _reminderTime = _dueDate!.subtract(
+                            const Duration(minutes: 15),
+                          );
                         }
                       });
                     }
@@ -260,11 +265,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                             const SizedBox(height: 4),
                             Text(
                               _reminderTime != null
-                                  ? DateFormat('yyyy-MM-dd HH:mm:ss').format(_reminderTime!)
+                                  ? DateFormat(
+                                      'yyyy-MM-dd HH:mm:ss',
+                                    ).format(_reminderTime!)
                                   : '选择时间',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: _reminderTime != null ? Colors.black87 : Colors.grey[600],
+                                color: _reminderTime != null
+                                    ? Colors.black87
+                                    : Colors.grey[600],
                               ),
                             ),
                           ],
@@ -281,10 +290,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             // Priority
             Text(
               '优先级',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
             ),
             const SizedBox(height: 8),
             Consumer<PriorityProvider>(
@@ -301,7 +307,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                       selectedColor: priority.color.withValues(alpha: 0.3),
                       labelStyle: TextStyle(
                         color: isSelected ? priority.color : Colors.grey[700],
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                       ),
                       onSelected: (_) {
                         setState(() {
@@ -316,13 +324,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             const SizedBox(height: 24),
 
             // Category
-            Text(
-              '分类',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
-            ),
+            Text('分类', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -340,7 +342,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   selectedColor: category.color.withValues(alpha: 0.2),
                   labelStyle: TextStyle(
                     color: isSelected ? category.color : Colors.grey[700],
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                   onSelected: (_) {
                     setState(() {
@@ -353,13 +357,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             const SizedBox(height: 24),
 
             // Repeat
-            Text(
-              '重复',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
-            ),
+            Text('重复', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -372,7 +370,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
                   selectedColor: Colors.blue.withValues(alpha: 0.2),
                   labelStyle: TextStyle(
                     color: isSelected ? Colors.blue : Colors.grey[700],
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                   onSelected: (_) {
                     setState(() {
@@ -385,13 +385,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
             const SizedBox(height: 24),
 
             // Custom tags
-            Text(
-              '标签',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
-            ),
+            Text('标签', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
             const SizedBox(height: 8),
             Consumer<TagProvider>(
               builder: (context, tagProvider, child) {
@@ -446,9 +440,9 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
   Future<void> _parseWithAI() async {
     final text = _titleController.text.trim();
     if (text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请先输入任务内容')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请先输入任务内容')));
       return;
     }
 
@@ -494,9 +488,7 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          results.isEmpty
-              ? '已解析任务内容'
-              : '已智能识别：${results.join("、")}',
+          results.isEmpty ? '已解析任务内容' : '已智能识别：${results.join("、")}',
         ),
         backgroundColor: Colors.green,
       ),
@@ -595,6 +587,15 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
       reminderTime = _reminderTime;
     }
 
+    if (reminderTime != null) {
+      final granted = await _explainAndRequestNotificationPermission();
+      if (!granted && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('任务会保存，但系统通知可能不会推送。可在系统设置中开启通知权限。')),
+        );
+      }
+    }
+
     if (isEditing) {
       final updatedTask = widget.task!.copyWith(
         title: _titleController.text.trim(),
@@ -626,10 +627,33 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
     if (!mounted) return;
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(isEditing ? '任务已更新' : '任务已创建'),
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(isEditing ? '任务已更新' : '任务已创建')));
+  }
+
+  Future<bool> _explainAndRequestNotificationPermission() async {
+    final shouldRequest = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('开启任务提醒'),
+        content: const Text('AiTODO 需要通知权限来发送任务提醒。拒绝权限不影响保存任务，但不会收到系统提醒。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('暂不开启'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('继续'),
+          ),
+        ],
       ),
     );
+
+    if (shouldRequest != true) {
+      return false;
+    }
+    return NotificationService().requestNotificationPermission();
   }
 }

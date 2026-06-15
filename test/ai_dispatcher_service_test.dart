@@ -12,10 +12,7 @@ class _FailingRemoteClient implements RemoteNlpClient {
 class _FixedRemoteClient implements RemoteNlpClient {
   @override
   Future<ParsedTask?> parseTask(String text) async {
-    return ParsedTask(
-      title: '远程解析任务',
-      suggestedCategory: null,
-    );
+    return ParsedTask(title: '远程解析任务', suggestedCategory: null);
   }
 }
 
@@ -25,10 +22,7 @@ class _CountingRemoteClient implements RemoteNlpClient {
   @override
   Future<ParsedTask?> parseTask(String text) async {
     callCount++;
-    return ParsedTask(
-      title: '远程解析任务',
-      suggestedCategory: null,
-    );
+    return ParsedTask(title: '远程解析任务', suggestedCategory: null);
   }
 }
 

@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum AiParseMode {
-  remoteFirst,
-  localFirst,
-}
+enum AiParseMode { smartLocal, localFirst }
 
 class AiModeProvider extends ChangeNotifier {
   static const String _modeKey = 'ai_parse_mode';
 
-  AiParseMode _mode = AiParseMode.remoteFirst;
+  AiParseMode _mode = AiParseMode.smartLocal;
 
   AiParseMode get mode => _mode;
-  bool get preferRemote => _mode == AiParseMode.remoteFirst;
+  bool get preferRemote => false;
 
   AiModeProvider() {
     _loadMode();
@@ -36,5 +33,12 @@ class AiModeProvider extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_modeKey, mode.index);
+  }
+
+  Future<void> resetToDefaults() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_modeKey);
+    _mode = AiParseMode.smartLocal;
+    notifyListeners();
   }
 }

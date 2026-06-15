@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ai_todo/models/task.dart';
 
@@ -9,11 +8,7 @@ void main() {
 
   group('Task with sortOrder', () {
     test('should have default sortOrder of 0', () {
-      final task = Task(
-        id: '1',
-        title: 'Test Task',
-        createdAt: DateTime.now(),
-      );
+      final task = Task(id: '1', title: 'Test Task', createdAt: DateTime.now());
 
       expect(task.sortOrder, 0);
     });
@@ -30,11 +25,7 @@ void main() {
     });
 
     test('should copyWith sortOrder', () {
-      final task = Task(
-        id: '1',
-        title: 'Test Task',
-        createdAt: DateTime.now(),
-      );
+      final task = Task(id: '1', title: 'Test Task', createdAt: DateTime.now());
 
       final updatedTask = task.copyWith(sortOrder: 10);
 
@@ -75,11 +66,7 @@ void main() {
 
   group('Task with reminderMinutesBefore', () {
     test('should have empty reminderMinutesBefore by default', () {
-      final task = Task(
-        id: '1',
-        title: 'Test Task',
-        createdAt: DateTime.now(),
-      );
+      final task = Task(id: '1', title: 'Test Task', createdAt: DateTime.now());
 
       expect(task.reminderMinutesBefore, isEmpty);
     });
@@ -96,11 +83,7 @@ void main() {
     });
 
     test('should copyWith reminderMinutesBefore', () {
-      final task = Task(
-        id: '1',
-        title: 'Test Task',
-        createdAt: DateTime.now(),
-      );
+      final task = Task(id: '1', title: 'Test Task', createdAt: DateTime.now());
 
       final updatedTask = task.copyWith(reminderMinutesBefore: [30, 10]);
 

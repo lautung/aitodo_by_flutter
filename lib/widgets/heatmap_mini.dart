@@ -20,7 +20,9 @@ class HeatmapMini extends StatelessWidget {
 
     // 最近 weeksToShow 周的数据
     final startDate = today.subtract(Duration(days: today.weekday % 7));
-    final adjustedStart = startDate.subtract(Duration(days: (weeksToShow - 1) * 7));
+    final adjustedStart = startDate.subtract(
+      Duration(days: (weeksToShow - 1) * 7),
+    );
 
     // 计算最大完成数用于归一化
     int maxCount = 1;
@@ -55,10 +57,7 @@ class HeatmapMini extends StatelessWidget {
               children: [
                 const Text(
                   '任务完成趋势',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
@@ -82,7 +81,11 @@ class HeatmapMini extends StatelessWidget {
     );
   }
 
-  Widget _buildCompactHeatmap(DateTime startDate, DateTime today, int maxCount) {
+  Widget _buildCompactHeatmap(
+    DateTime startDate,
+    DateTime today,
+    int maxCount,
+  ) {
     return Row(
       children: List.generate(weeksToShow * 7, (index) {
         final date = startDate.add(Duration(days: index));
@@ -118,13 +121,7 @@ class HeatmapMini extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Text(
-          '少',
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey[500],
-          ),
-        ),
+        Text('少', style: TextStyle(fontSize: 10, color: Colors.grey[500])),
         const SizedBox(width: 4),
         Container(
           width: 10,
@@ -162,13 +159,7 @@ class HeatmapMini extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 4),
-        Text(
-          '多',
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey[500],
-          ),
-        ),
+        Text('多', style: TextStyle(fontSize: 10, color: Colors.grey[500])),
       ],
     );
   }

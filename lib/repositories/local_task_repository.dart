@@ -6,9 +6,8 @@ import 'task_repository.dart';
 class LocalTaskRepository implements TaskRepository {
   final StorageService _storageService;
 
-  LocalTaskRepository({
-    StorageService? storageService,
-  }) : _storageService = storageService ?? StorageService();
+  LocalTaskRepository({StorageService? storageService})
+    : _storageService = storageService ?? StorageService();
 
   @override
   Future<List<Task>> loadTasks() => _storageService.loadTasks();
@@ -42,4 +41,3 @@ class LocalTaskRepository implements TaskRepository {
     return _storageService.importTaskBundle(filePath);
   }
 }
-

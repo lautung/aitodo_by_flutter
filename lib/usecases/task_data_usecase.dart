@@ -37,4 +37,3 @@ class TaskDataUseCase {
   Future<TaskDataBundle?> importTaskBundle(String filePath) =>
       _repository.importTaskBundle(filePath);
 }
-

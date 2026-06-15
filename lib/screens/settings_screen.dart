@@ -8,7 +8,11 @@ import '../providers/tag_provider.dart';
 import '../providers/priority_provider.dart';
 import '../providers/ai_mode_provider.dart';
 import '../providers/notification_settings_provider.dart';
+import '../providers/pomodoro_provider.dart';
 import '../services/notification_service.dart';
+import '../services/local_data_service.dart';
+import '../services/chat_storage_service.dart';
+import 'legal_document_screen.dart';
 import 'recycle_bin_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -86,7 +90,11 @@ class SettingsScreen extends StatelessWidget {
                                     : null,
                               ),
                               child: isSelected
-                                  ? const Icon(Icons.check, color: Colors.white, size: 20)
+                                  ? const Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                      size: 20,
+                                    )
                                   : null,
                             ),
                           );
@@ -110,11 +118,33 @@ class SettingsScreen extends StatelessWidget {
                           subtitle: const Text('每天固定时间推送未完成任务总结'),
                           value: settingsProvider.isDailySummaryEnabled,
                           onChanged: (value) async {
-                            await settingsProvider.setDailySummaryEnabled(value);
+                            final taskProvider = context.read<TaskProvider>();
+                            final messenger = ScaffoldMessenger.of(context);
                             if (value) {
-                              final taskProvider = context.read<TaskProvider>();
-                              final pendingTasks = taskProvider.allTasks.where((t) => !t.isCompleted).toList();
-                              final taskTitles = pendingTasks.map((t) => t.title).toList();
+                              final granted =
+                                  await _explainAndRequestNotificationPermission(
+                                    context,
+                                  );
+                              if (!granted) {
+                                messenger.showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      '每日总结已保存，但系统通知可能不会推送。可在系统设置中开启通知权限。',
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                            await settingsProvider.setDailySummaryEnabled(
+                              value,
+                            );
+                            if (value) {
+                              final pendingTasks = taskProvider.allTasks
+                                  .where((t) => !t.isCompleted)
+                                  .toList();
+                              final taskTitles = pendingTasks
+                                  .map((t) => t.title)
+                                  .toList();
                               await NotificationService().scheduleDailySummary(
                                 settingsProvider.dailySummaryTime,
                                 pendingTasks.length,
@@ -133,20 +163,27 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () async {
+                              final taskProvider = context.read<TaskProvider>();
                               final time = await showTimePicker(
                                 context: context,
                                 initialTime: settingsProvider.dailySummaryTime,
                               );
                               if (time != null) {
-                                await settingsProvider.setDailySummaryTime(time);
-                                final taskProvider = context.read<TaskProvider>();
-                                final pendingTasks = taskProvider.allTasks.where((t) => !t.isCompleted).toList();
-                                final taskTitles = pendingTasks.map((t) => t.title).toList();
-                                await NotificationService().scheduleDailySummary(
+                                await settingsProvider.setDailySummaryTime(
                                   time,
-                                  pendingTasks.length,
-                                  taskTitles: taskTitles,
                                 );
+                                final pendingTasks = taskProvider.allTasks
+                                    .where((t) => !t.isCompleted)
+                                    .toList();
+                                final taskTitles = pendingTasks
+                                    .map((t) => t.title)
+                                    .toList();
+                                await NotificationService()
+                                    .scheduleDailySummary(
+                                      time,
+                                      pendingTasks.length,
+                                      taskTitles: taskTitles,
+                                    );
                               }
                             },
                           ),
@@ -168,25 +205,22 @@ class SettingsScreen extends StatelessWidget {
                       const Text('任务解析模式'),
                       const SizedBox(height: 8),
                       Text(
-                        aiModeProvider.mode == AiParseMode.remoteFirst
-                            ? '远程优先（远程失败时自动回退本地解析）'
-                            : '本地优先（完全使用本地规则解析）',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[700],
-                        ),
+                        aiModeProvider.mode == AiParseMode.smartLocal
+                            ? '智能解析（本地规则识别日期、优先级和分类）'
+                            : '本地规则解析（不连接远程模型）',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                       ),
                       const SizedBox(height: 12),
                       SegmentedButton<AiParseMode>(
                         segments: const [
                           ButtonSegment(
-                            value: AiParseMode.remoteFirst,
-                            label: Text('远程优先'),
-                            icon: Icon(Icons.cloud_outlined),
+                            value: AiParseMode.smartLocal,
+                            label: Text('智能解析'),
+                            icon: Icon(Icons.auto_awesome),
                           ),
                           ButtonSegment(
                             value: AiParseMode.localFirst,
-                            label: Text('本地优先'),
+                            label: Text('本地规则'),
                             icon: Icon(Icons.offline_bolt_outlined),
                           ),
                         ],
@@ -197,6 +231,40 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // 合规与说明
+              _buildSectionHeader('合规与说明'),
+              Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  children: [
+                    _buildLegalTile(
+                      context,
+                      icon: Icons.privacy_tip_outlined,
+                      title: '隐私政策',
+                      type: LegalDocumentType.privacyPolicy,
+                    ),
+                    _buildLegalTile(
+                      context,
+                      icon: Icons.description_outlined,
+                      title: '用户协议',
+                      type: LegalDocumentType.userAgreement,
+                    ),
+                    _buildLegalTile(
+                      context,
+                      icon: Icons.security_outlined,
+                      title: '权限说明',
+                      type: LegalDocumentType.permissions,
+                    ),
+                    _buildLegalTile(
+                      context,
+                      icon: Icons.auto_awesome_outlined,
+                      title: 'AI能力说明',
+                      type: LegalDocumentType.aiNotice,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
@@ -218,13 +286,23 @@ class SettingsScreen extends StatelessWidget {
                       subtitle: const Text('从文件恢复任务'),
                       onTap: () => _importTasks(context),
                     ),
+                    ListTile(
+                      leading: const Icon(Icons.delete_forever_outlined),
+                      title: const Text('清除本地数据'),
+                      subtitle: const Text('清空任务、标签、聊天记录、番茄钟历史和偏好设置'),
+                      textColor: Colors.red,
+                      iconColor: Colors.red,
+                      onTap: () => _confirmClearLocalData(context),
+                    ),
                     Consumer<TaskProvider>(
                       builder: (context, provider, child) {
                         final count = provider.deletedTasks.length;
                         return ListTile(
                           leading: const Icon(Icons.delete_outline),
                           title: const Text('回收站'),
-                          subtitle: Text(count > 0 ? '$count 个已删除任务' : '已删除的任务'),
+                          subtitle: Text(
+                            count > 0 ? '$count 个已删除任务' : '已删除的任务',
+                          ),
                           trailing: count > 0
                               ? Container(
                                   padding: const EdgeInsets.symmetric(
@@ -265,26 +343,37 @@ class SettingsScreen extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Consumer<TagProvider>(
                   builder: (context, tagProvider, child) {
-                    final List<Widget> tagItems = tagProvider.tags.map<Widget>((tag) => ListTile(
-                              leading: Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: tag.color,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
+                    final List<Widget> tagItems = tagProvider.tags
+                        .map<Widget>(
+                          (tag) => ListTile(
+                            leading: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: tag.color,
+                                borderRadius: BorderRadius.circular(4),
                               ),
-                              title: Text(tag.name),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: () => _confirmDeleteTag(context, tagProvider, tag.id, tag.name),
+                            ),
+                            title: Text(tag.name),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () => _confirmDeleteTag(
+                                context,
+                                tagProvider,
+                                tag.id,
+                                tag.name,
                               ),
-                            )).toList();
-                    tagItems.add(ListTile(
-                      leading: const Icon(Icons.add),
-                      title: const Text('添加标签'),
-                      onTap: () => _showAddTagDialog(context),
-                    ));
+                            ),
+                          ),
+                        )
+                        .toList();
+                    tagItems.add(
+                      ListTile(
+                        leading: const Icon(Icons.add),
+                        title: const Text('添加标签'),
+                        onTap: () => _showAddTagDialog(context),
+                      ),
+                    );
                     return Column(children: tagItems);
                   },
                 ),
@@ -317,28 +406,37 @@ class SettingsScreen extends StatelessWidget {
                     ];
                     // 添加自定义优先级
                     for (final priority in customPriorities) {
-                      priorityItems.add(ListTile(
-                        leading: Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: priority.color,
-                            borderRadius: BorderRadius.circular(4),
+                      priorityItems.add(
+                        ListTile(
+                          leading: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: priority.color,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          title: Text(priority.name),
+                          subtitle: Text('自定义优先级'),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => _confirmDeletePriority(
+                              context,
+                              priorityProvider,
+                              priority.id,
+                              priority.name,
+                            ),
                           ),
                         ),
-                        title: Text(priority.name),
-                        subtitle: Text('自定义优先级'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () => _confirmDeletePriority(context, priorityProvider, priority.id, priority.name),
-                        ),
-                      ));
+                      );
                     }
-                    priorityItems.add(ListTile(
-                      leading: const Icon(Icons.add),
-                      title: const Text('添加自定义优先级'),
-                      onTap: () => _showAddPriorityDialog(context),
-                    ));
+                    priorityItems.add(
+                      ListTile(
+                        leading: const Icon(Icons.add),
+                        title: const Text('添加自定义优先级'),
+                        onTap: () => _showAddPriorityDialog(context),
+                      ),
+                    );
                     return Column(children: priorityItems);
                   },
                 ),
@@ -384,20 +482,66 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildLegalTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required LegalDocumentType type,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => LegalDocumentScreen(type: type)),
+        );
+      },
+    );
+  }
+
+  Future<bool> _explainAndRequestNotificationPermission(
+    BuildContext context,
+  ) async {
+    final shouldRequest = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('开启通知'),
+        content: const Text('AiTODO 需要通知权限来发送任务提醒和每日总结。拒绝权限不影响管理任务，但不会收到系统推送。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('暂不开启'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('继续'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldRequest != true) {
+      return false;
+    }
+    return NotificationService().requestNotificationPermission();
+  }
+
   Future<void> _exportTasks(BuildContext context) async {
     final provider = context.read<TaskProvider>();
     final filePath = await provider.exportTaskBackup();
 
     if (filePath != null && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('导出成功')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('导出成功')));
       // 分享文件
       await Share.shareXFiles([XFile(filePath)], text: 'AiTODO 任务备份');
     } else if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('导出失败')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('导出失败')));
     }
   }
 
@@ -409,8 +553,9 @@ class SettingsScreen extends StatelessWidget {
     if (!context.mounted) return;
 
     if (result != null && result.files.single.path != null) {
-      final importedBundle =
-          await context.read<TaskProvider>().importTaskBackup(result.files.single.path!);
+      final importedBundle = await context
+          .read<TaskProvider>()
+          .importTaskBackup(result.files.single.path!);
       final importedTasks = importedBundle?.tasks;
       final importedDeletedTasks = importedBundle?.deletedTasks ?? const [];
 
@@ -459,11 +604,57 @@ class SettingsScreen extends StatelessWidget {
           }
         }
       } else if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('导入失败：文件格式错误')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('导入失败：文件格式错误')));
       }
     }
+  }
+
+  Future<void> _confirmClearLocalData(BuildContext context) async {
+    final taskProvider = context.read<TaskProvider>();
+    final tagProvider = context.read<TagProvider>();
+    final priorityProvider = context.read<PriorityProvider>();
+    final themeProvider = context.read<ThemeProvider>();
+    final aiModeProvider = context.read<AiModeProvider>();
+    final notificationSettingsProvider = context
+        .read<NotificationSettingsProvider>();
+    final pomodoroProvider = context.read<PomodoroProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('清除本地数据'),
+        content: const Text('此操作会清空任务、回收站、标签、聊天记录、番茄钟历史和本地偏好设置。导出的备份文件不受影响。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('清除'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    await NotificationService().cancelAllReminders();
+    await LocalDataService().clearUserData();
+    await ChatStorageService.clearMessages();
+    await taskProvider.replaceAllTasks(const [], clearDeletedTasks: true);
+    await tagProvider.resetToDefaults();
+    await priorityProvider.resetToDefaults();
+    await themeProvider.resetToDefaults();
+    await aiModeProvider.resetToDefaults();
+    await notificationSettingsProvider.resetToDefaults();
+    await pomodoroProvider.resetAllData();
+
+    messenger.showSnackBar(const SnackBar(content: Text('本地数据已清除')));
   }
 
   void _showAddTagDialog(BuildContext context) {
@@ -490,29 +681,34 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: [
-                  Colors.red,
-                  Colors.orange,
-                  Colors.blue,
-                  Colors.green,
-                  Colors.purple,
-                  Colors.pink,
-                  Colors.teal,
-                  Colors.indigo,
-                ].map((color) => GestureDetector(
-                      onTap: () => setState(() => selectedColor = color),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: selectedColor == color
-                              ? Border.all(color: Colors.black, width: 3)
-                              : null,
-                        ),
-                      ),
-                    )).toList(),
+                children:
+                    [
+                          Colors.red,
+                          Colors.orange,
+                          Colors.blue,
+                          Colors.green,
+                          Colors.purple,
+                          Colors.pink,
+                          Colors.teal,
+                          Colors.indigo,
+                        ]
+                        .map(
+                          (color) => GestureDetector(
+                            onTap: () => setState(() => selectedColor = color),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: selectedColor == color
+                                    ? Border.all(color: Colors.black, width: 3)
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
               ),
             ],
           ),
@@ -525,9 +721,9 @@ class SettingsScreen extends StatelessWidget {
               onPressed: () {
                 if (nameController.text.trim().isNotEmpty) {
                   context.read<TagProvider>().addTag(
-                        nameController.text.trim(),
-                        selectedColor,
-                      );
+                    nameController.text.trim(),
+                    selectedColor,
+                  );
                   Navigator.pop(dialogContext);
                 }
               },
@@ -539,7 +735,12 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _confirmDeleteTag(BuildContext context, TagProvider provider, String tagId, String tagName) {
+  void _confirmDeleteTag(
+    BuildContext context,
+    TagProvider provider,
+    String tagId,
+    String tagName,
+  ) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -588,29 +789,34 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: [
-                  Colors.red,
-                  Colors.orange,
-                  Colors.blue,
-                  Colors.green,
-                  Colors.purple,
-                  Colors.pink,
-                  Colors.teal,
-                  Colors.indigo,
-                ].map((color) => GestureDetector(
-                      onTap: () => setState(() => selectedColor = color),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: selectedColor == color
-                              ? Border.all(color: Colors.black, width: 3)
-                              : null,
-                        ),
-                      ),
-                    )).toList(),
+                children:
+                    [
+                          Colors.red,
+                          Colors.orange,
+                          Colors.blue,
+                          Colors.green,
+                          Colors.purple,
+                          Colors.pink,
+                          Colors.teal,
+                          Colors.indigo,
+                        ]
+                        .map(
+                          (color) => GestureDetector(
+                            onTap: () => setState(() => selectedColor = color),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: selectedColor == color
+                                    ? Border.all(color: Colors.black, width: 3)
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
               ),
               const SizedBox(height: 16),
               const Text('选择优先级等级'),
@@ -637,10 +843,10 @@ class SettingsScreen extends StatelessWidget {
               onPressed: () {
                 if (nameController.text.trim().isNotEmpty) {
                   context.read<PriorityProvider>().addPriority(
-                        nameController.text.trim(),
-                        selectedColor,
-                        selectedLevel,
-                      );
+                    nameController.text.trim(),
+                    selectedColor,
+                    selectedLevel,
+                  );
                   Navigator.pop(dialogContext);
                 }
               },
@@ -652,7 +858,12 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _confirmDeletePriority(BuildContext context, PriorityProvider provider, String priorityId, String priorityName) {
+  void _confirmDeletePriority(
+    BuildContext context,
+    PriorityProvider provider,
+    String priorityId,
+    String priorityName,
+  ) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(

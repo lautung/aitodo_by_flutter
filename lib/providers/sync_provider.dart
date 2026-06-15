@@ -14,7 +14,7 @@ class SyncProvider extends ChangeNotifier {
   ConflictStrategy _conflictStrategy = ConflictStrategy.newerWins;
 
   SyncProvider({SyncService? syncService})
-      : _syncService = syncService ?? LocalSyncProvider();
+    : _syncService = syncService ?? LocalSyncProvider();
 
   SyncStatus get status => _status;
   SyncResult? get lastResult => _lastResult;

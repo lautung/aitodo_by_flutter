@@ -21,7 +21,9 @@ class NotificationService {
 
     tz_data.initializeTimeZones();
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const initSettings = InitializationSettings(android: androidSettings);
 
     await _notifications.initialize(
@@ -29,15 +31,21 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
-    if (Platform.isAndroid) {
-      final androidPlugin = _notifications
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-      await androidPlugin?.requestNotificationsPermission();
-      await androidPlugin?.requestExactAlarmsPermission();
+    _isInitialized = true;
+  }
+
+  Future<bool> requestNotificationPermission() async {
+    await initialize();
+
+    if (!Platform.isAndroid) {
+      return true;
     }
 
-    _isInitialized = true;
+    final androidPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    return await androidPlugin?.requestNotificationsPermission() ?? true;
   }
 
   void _onNotificationTapped(NotificationResponse response) {
@@ -93,7 +101,7 @@ class NotificationService {
           icon: '@mipmap/ic_launcher',
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
@@ -137,7 +145,11 @@ class NotificationService {
   static const int _dailySummaryNotificationId = 999999;
 
   /// 调度每日总结通知
-  Future<void> scheduleDailySummary(TimeOfDay time, int pendingCount, {List<String>? taskTitles}) async {
+  Future<void> scheduleDailySummary(
+    TimeOfDay time,
+    int pendingCount, {
+    List<String>? taskTitles,
+  }) async {
     await initialize();
 
     // 取消已存在的每日总结通知
@@ -147,7 +159,9 @@ class NotificationService {
     final String body;
     if (taskTitles != null && taskTitles.isNotEmpty) {
       final taskList = taskTitles.take(5).map((t) => '• $t').join('\n');
-      final moreText = taskTitles.length > 5 ? '\n...还有 ${taskTitles.length - 5} 个任务' : '';
+      final moreText = taskTitles.length > 5
+          ? '\n...还有 ${taskTitles.length - 5} 个任务'
+          : '';
       body = '您有 $pendingCount 个待办任务：\n$taskList$moreText';
     } else {
       body = '您有 $pendingCount 个待办任务';
@@ -185,7 +199,7 @@ class NotificationService {
           icon: '@mipmap/ic_launcher',
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time, // 每天重复
@@ -199,14 +213,19 @@ class NotificationService {
   }
 
   /// 更新每日总结通知（用于显示当前待办任务数量）
-  Future<void> updateDailySummary(int pendingCount, {List<String>? taskTitles}) async {
+  Future<void> updateDailySummary(
+    int pendingCount, {
+    List<String>? taskTitles,
+  }) async {
     await initialize();
 
     // 检查是否已有每日总结通知安排
     // 如果有，我们需要重新安排以更新内容
     // 这里我们直接重新调度
     final pending = await _notifications.pendingNotificationRequests();
-    final hasDailySummary = pending.any((p) => p.id == _dailySummaryNotificationId);
+    final hasDailySummary = pending.any(
+      (p) => p.id == _dailySummaryNotificationId,
+    );
 
     if (hasDailySummary) {
       // 取消旧的，重新安排

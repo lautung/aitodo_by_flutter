@@ -29,14 +29,39 @@ void main() {
     setUp(() {
       // 创建一些测试任务
       tasks = [
-        _task(id: '1', title: '任务1', isCompleted: true, category: TaskCategory.work,
-            completedAt: DateTime(2026, 3, 1, 10)),
-        _task(id: '2', title: '任务2', isCompleted: true, category: TaskCategory.work,
-            completedAt: DateTime(2026, 3, 1, 11)),
-        _task(id: '3', title: '任务3', isCompleted: false, category: TaskCategory.life),
-        _task(id: '4', title: '任务4', isCompleted: true, category: TaskCategory.study,
-            completedAt: DateTime(2026, 3, 2, 9)),
-        _task(id: '5', title: '任务5', isCompleted: false, category: TaskCategory.other),
+        _task(
+          id: '1',
+          title: '任务1',
+          isCompleted: true,
+          category: TaskCategory.work,
+          completedAt: DateTime(2026, 3, 1, 10),
+        ),
+        _task(
+          id: '2',
+          title: '任务2',
+          isCompleted: true,
+          category: TaskCategory.work,
+          completedAt: DateTime(2026, 3, 1, 11),
+        ),
+        _task(
+          id: '3',
+          title: '任务3',
+          isCompleted: false,
+          category: TaskCategory.life,
+        ),
+        _task(
+          id: '4',
+          title: '任务4',
+          isCompleted: true,
+          category: TaskCategory.study,
+          completedAt: DateTime(2026, 3, 2, 9),
+        ),
+        _task(
+          id: '5',
+          title: '任务5',
+          isCompleted: false,
+          category: TaskCategory.other,
+        ),
       ];
     });
 
@@ -111,16 +136,21 @@ void main() {
       expect(completed[TaskCategory.other], 0);
     });
 
-    test('getTasksCompletedOn should return tasks completed on specific date', () {
-      final stats = TaskStats(
-        tasks: tasks,
-        deletedTasks: [],
-        statsTimeFilter: StatsTimeFilter.all,
-      );
-      final completedOnMarch1 = stats.getTasksCompletedOn(DateTime(2026, 3, 1));
-      expect(completedOnMarch1.length, 2);
-      expect(completedOnMarch1.map((t) => t.id), containsAll(['1', '2']));
-    });
+    test(
+      'getTasksCompletedOn should return tasks completed on specific date',
+      () {
+        final stats = TaskStats(
+          tasks: tasks,
+          deletedTasks: [],
+          statsTimeFilter: StatsTimeFilter.all,
+        );
+        final completedOnMarch1 = stats.getTasksCompletedOn(
+          DateTime(2026, 3, 1),
+        );
+        expect(completedOnMarch1.length, 2);
+        expect(completedOnMarch1.map((t) => t.id), containsAll(['1', '2']));
+      },
+    );
 
     test('getCompletionHeatmapData should return data for past 365 days', () {
       final stats = TaskStats(

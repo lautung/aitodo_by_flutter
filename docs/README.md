@@ -1,312 +1,94 @@
 # AiTODO 应用文档
 
-## 目录
-
-1. [项目概述](#项目概述)
-2. [功能特性](#功能特性)
-3. [技术架构](#技术架构)
-4. [目录结构](#目录结构)
-5. [数据模型](#数据模型)
-6. [核心模块说明](#核心模块说明)
-7. [页面说明](#页面说明)
-8. [依赖项](#依赖项)
-9. [构建与运行](#构建与运行)
-
----
-
 ## 项目概述
 
-**AiTODO** 是一款 AI 赋能的智能待办事项管理应用，支持自然语言创建任务、智能分类、任务提醒、重复任务、数据统计等功能。
+AiTODO 当前版本是一款 Android 本地优先的个人待办应用。产品核心是降低记录任务的成本，并在不依赖账号和云服务的前提下提供任务管理、提醒、统计和本地备份能力。
 
-- **应用名称**: AiTODO
-- **版本**: 1.0.0
-- **目标平台**: Android
-- **框架**: Flutter 3.11.0+
+- 应用名称：AiTODO
+- 版本：1.0.0
+- 目标平台：Android
+- 框架：Flutter
+- 数据策略：本地优先，用户主动导入/导出备份
 
----
+## 当前功能
 
-## 功能特性
+- 任务管理：创建、编辑、删除、回收站恢复、完成状态切换。
+- 任务结构：描述、截止日期、提醒时间、优先级、分类、标签、子任务、重复任务。
+- 列表效率：搜索、状态筛选、分类筛选、标签筛选、排序和批量操作。
+- 智能解析：本地规则识别部分中文日期、优先级关键词和分类关键词。
+- AI 助手：创建任务、查询任务数量、查看简要任务列表和生成简单统计建议。
+- 日历统计：年/月/周/日视图、完成热力图、完成率、分类统计和周趋势。
+- 番茄钟：工作/休息计时、本地专注历史。
+- 通知提醒：任务提醒和每日任务总结，使用前向用户说明通知权限用途。
+- 数据备份：导出完整 JSON 备份，导入时选择合并或替换。
+- 合规入口：首次启动协议确认；设置页提供隐私政策、用户协议、权限说明、AI 能力说明和清除本地数据。
 
-### 核心功能
-- **任务管理**: 创建、编辑、删除任务
-- **AI智能解析**: 输入"下周三完成报告"自动识别日期、优先级、分类
-- **分类管理**: 工作、生活、学习、其他四类
-- **优先级**: 高/中/低 + 自定义优先级
-- **自定义标签**: 用户可添加自定义标签
-- **重复任务**: 每日、每周、每月、每年重复
-- **任务提醒**: 截止前15分钟推送通知
-- **回收站**: 误删可恢复
-- **数据备份**: 支持导出/导入JSON文件
+## 非当前版本承诺
 
-### 高级功能
-- **多维度筛选**: 按状态、分类筛选
-- **智能排序**: 按创建时间、截止日期、优先级排序
-- **批量操作**: 批量标记完成、批量删除
-- **数据统计**: 完成率、分类统计、周趋势图表
-- **AI助手**: 智能问答、任务建议
+以下能力仅作为后续规划，不应在应用商店文案中作为当前版本能力宣传：
 
-### 主题支持
-- 浅色主题
-- 深色主题
-- 跟随系统
+- 真实云同步、跨端同步或多人协作。
+- Gemini、OpenAI、DeepSeek 等远程模型接入。
+- BYOK API Key 配置。
+- 本地大模型解析。
+- 账号体系、账号注销和云端数据删除。
+- iOS、Windows 或桌面全局快捷键。
 
----
+## 架构说明
 
-## 技术架构
-
-### 架构模式
-采用 **MVVM** (Model-View-ViewModel) 架构，结合 Flutter 的 **Provider** 状态管理。
-
-```
+```text
 lib/
-├── main.dart                 # 应用入口
-├── models/                   # 数据模型
-│   ├── task.dart            # 任务模型
-│   └── subtask.dart         # 子任务模型
-├── repositories/            # 数据仓储抽象与本地实现
-│   ├── task_repository.dart
-│   └── local_task_repository.dart
-├── usecases/                # 业务用例层（数据编排）
-│   └── task_data_usecase.dart
-├── providers/               # 状态管理
-│   ├── task_provider.dart   # 任务状态
-│   ├── tag_provider.dart    # 标签状态
-│   ├── priority_provider.dart # 优先级状态
-│   ├── theme_provider.dart  # 主题状态
-│   └── ai_mode_provider.dart # AI解析模式状态
-├── services/                # 业务服务
-│   ├── storage_service.dart # 本地存储
-│   ├── notification_service.dart # 通知服务
-│   ├── ai_service.dart      # AI解析服务
-│   ├── ai_dispatcher_service.dart # AI分发与降级
-│   └── chat_storage_service.dart # 聊天存储
-├── screens/                 # 页面
-│   ├── home_screen.dart    # 主页
-│   ├── task_list_screen.dart # 任务列表
-│   ├── task_form_screen.dart # 任务表单
-│   ├── task_detail_screen.dart # 任务详情
-│   ├── settings_screen.dart # 设置页
-│   ├── statistics_screen.dart # 统计页
-│   ├── recycle_bin_screen.dart # 回收站
-│   └── ai_chat_screen.dart # AI聊天
-└── widgets/                 # 组件
-    └── task_card.dart      # 任务卡片
+├── main.dart
+├── models/
+├── providers/
+├── repositories/
+├── services/
+├── screens/
+├── usecases/
+└── widgets/
 ```
 
----
+- `models/`：任务、子任务、分组和同步数据结构。
+- `providers/`：任务、主题、标签、优先级、AI 模式、通知设置和番茄钟状态。
+- `services/`：本地存储、备份编解码、通知、智能解析、聊天记录、合规状态和本地数据清理。
+- `screens/`：任务列表、表单、详情、日历、统计、番茄钟、AI 助手、设置和法律说明页。
+- `repositories/` 与 `usecases/`：任务数据读写抽象与编排。
 
-## 数据模型
+## 数据与隐私
 
-### Task (任务)
-```dart
-class Task {
-  String id;                    // 唯一标识
-  String title;                // 标题
-  String? description;         // 描述
-  DateTime? dueDate;           // 截止日期
-  Priority priority;           // 优先级 (high/medium/low)
-  TaskCategory category;       // 分类 (work/life/study/other)
-  bool isCompleted;            // 是否完成
-  DateTime createdAt;          // 创建时间
-  DateTime? completedAt;       // 完成时间
-  RepeatType repeatType;       // 重复类型 (none/daily/weekly/monthly/yearly)
-  String? parentId;            // 父任务ID（用于重复任务链）
-  List<SubTask> subtasks;     // 子任务列表
-  DateTime? reminderTime;      // 提醒时间
-  List<String> customTagIds;   // 自定义标签ID列表
-}
-```
+- 默认数据保存在设备本地。
+- 导出文件由用户主动生成和分享，应用不自动上传。
+- 当前版本无账号系统；用户可通过设置页“清除本地数据”移除本机数据。
+- 如未来接入云同步或远程 AI，必须先更新隐私政策、用户协议和权限说明。
 
-### 枚举类型
+## 权限说明
 
-**Priority (优先级)**
-- `high` - 高 (红色)
-- `medium` - 中 (橙色)
-- `low` - 低 (绿色)
+- 通知权限：发送任务提醒和每日任务总结。
+- 文件选择/分享：导入、导出和分享备份文件。
+- 本地存储：保存任务和应用偏好。
+- 当前版本不使用麦克风权限。
 
-**TaskCategory (分类)**
-- `work` - 工作 (蓝色图标)
-- `life` - 生活 (绿色图标)
-- `study` - 学习 (紫色图标)
-- `other` - 其他 (灰色图标)
+## 构建与验证
 
-**RepeatType (重复类型)**
-- `none` - 不重复
-- `daily` - 每日
-- `weekly` - 每周
-- `monthly` - 每月
-- `yearly` - 每年
-
----
-
-## 核心模块说明
-
-### 1. TaskProvider (任务状态管理)
-负责所有任务相关的业务逻辑：
-- `addTask()` - 添加任务
-- `updateTask()` - 更新任务
-- `deleteTask()` - 删除任务（移入回收站）
-- `toggleTaskCompletion()` - 切换完成状态
-- `_createNextRepeatTask()` - 创建下一个重复任务
-- 筛选、排序逻辑
-
-### 2. StorageService (本地存储)
-- 使用 `SharedPreferences` 存储任务数据
-- 支持导出/导入JSON文件
-- 回收站持久化
-
-### 3. AI Service (智能解析)
-包含四个核心服务：
-- **AiDispatcherService**: 远程优先/本地优先分发，远程失败自动降级到本地规则引擎
-- **NLPService**: 自然语言解析
-  - 日期解析（今天、明天、下周三、3天后等）
-  - 优先级解析（紧急、重要等关键词）
-- **ClassificationService**: 智能分类建议
-- **SummaryService**: 任务摘要生成
-
-### 4. NotificationService (通知服务)
-- 使用 `flutter_local_notifications` 实现本地通知
-- 支持定时提醒（截止前15分钟）
-- Android需要配置通知权限
-
----
-
-## 页面说明
-
-### 1. HomeScreen (主页)
-底部导航包含4个Tab：
-- 任务列表
-- 统计
-- AI助手
-- 设置
-
-### 2. TaskListScreen (任务列表)
-- 搜索栏
-- 状态筛选（全部/进行中/已完成）
-- 分类筛选（工作/生活/学习/其他）
-- 排序按钮（AppBar右上角）
-- 批量选择模式
-
-### 3. TaskFormScreen (任务表单)
-- AI智能解析按钮
-- 截止日期选择
-- 提醒开关
-- 优先级选择（支持自定义优先级）
-- 分类选择
-- 重复类型
-- 自定义标签
-
-### 4. TaskDetailScreen (任务详情)
-- 显示完整任务信息
-- 子任务清单
-- 进度条
-- 编辑/删除操作
-
-### 5. SettingsScreen (设置)
-- 主题切换
-- AI 解析模式切换（远程优先/本地优先）
-- 导出/导入任务
-- 回收站入口
-- 标签管理
-- 优先级管理
-
-### 6. StatisticsScreen (统计)
-- 完成率圆环图
-- 分类统计柱状图
-- 周趋势折线图
-
-### 7. AIChatScreen (AI助手)
-- 智能问答
-- 任务建议
-- 数据分析
-
----
-
-## 依赖项
-
-```yaml
-dependencies:
-  flutter:
-    sdk: flutter
-  cupertino_icons: ^1.0.8
-  provider: ^6.1.2           # 状态管理
-  shared_preferences: ^2.2.3  # 本地存储
-  intl: ^0.19.0              # 日期格式化
-  uuid: ^4.4.0               # UUID生成
-  fl_chart: ^0.68.0          # 图表
-  flutter_local_notifications: ^17.2.2  # 本地通知
-  timezone: ^0.9.4           # 时区
-  path_provider: ^2.1.2      # 文件路径
-  file_picker: ^8.0.0+1      # 文件选择
-  share_plus: ^9.0.0          # 分享
-```
-
----
-
-## 构建与运行
-
-### 开发环境
-- Flutter SDK: ^3.11.0
-- Dart SDK: ^3.11.0
-- Android SDK
-
-### 运行命令
 ```bash
-# 安装依赖
 flutter pub get
-
-# 运行调试版
-flutter run
-
-# 构建调试APK
-flutter build apk --debug
-
-# 构建发布APK
-flutter build apk --release
-
-# 代码分析
 flutter analyze
-
-# 全量测试
 flutter test
+flutter build apk --debug
+flutter build apk --release
 ```
 
-### CI
-- 已配置 GitHub Actions: `.github/workflows/flutter_ci.yml`
-- 默认执行：依赖安装、静态检查、测试、Debug APK 构建
+## 上架检查
 
-### Android 配置
-- 最低SDK版本: 21 (Android 5.0)
-- 目标SDK版本: 34 (Android 14)
-- 已声明通知权限并在运行时请求（Android 13+）
-- 发布构建需提供 `android/key.properties` 与 keystore
+- 应用商店描述只写当前已实现能力。
+- 隐私政策和用户协议应有可访问 URL。
+- Google Play 数据安全表单应按本地数据、用户主动分享文件和通知权限真实填写。
+- 中国安卓渠道应按目标市场补充备案、隐私弹窗、权限用途说明和应用内数据清除入口。
 
----
+## Roadmap
 
-## 版本历史
-
-### v1.0.0
-- 初始版本
-- 任务管理核心功能
-- AI智能解析
-- 主题支持
-- 数据统计
-- 任务提醒
-- 重复任务
-- 自定义标签和优先级
-
----
-
-## 常见问题
-
-### Q: 如何创建重复任务？
-A: 在创建任务时，选择重复类型（每日/每周/每月/每年），设置截止日期后，完成任务会自动创建下一个重复任务。
-
-### Q: 自定义标签在哪里管理？
-A: 进入「设置」页面，找到「标签管理」部分，可以添加或删除自定义标签。
-
-### Q: 数据如何备份？
-A: 进入「设置」页面，点击「导出任务」，可以选择分享或保存备份文件。导入时点击「导入任务」选择备份文件。
-
-### Q: 误删的任务如何恢复？
-A: 进入「设置」页面，点击「回收站」，可以恢复误删的任务。
+- 云同步和冲突合并。
+- 远程 AI 与 BYOK。
+- 本地大模型解析。
+- 协作清单。
+- 多平台适配。

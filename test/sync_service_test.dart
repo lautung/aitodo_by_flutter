@@ -25,11 +25,7 @@ void main() {
     test('should serialize and deserialize correctly', () {
       final syncData = SyncData(
         tasks: [
-          Task(
-            id: '1',
-            title: 'Test Task',
-            createdAt: DateTime(2025, 1, 1),
-          ),
+          Task(id: '1', title: 'Test Task', createdAt: DateTime(2025, 1, 1)),
         ],
         deletedTasks: [],
         taskGroups: [],
@@ -71,11 +67,7 @@ void main() {
     test('toJsonString and fromJsonString work correctly', () {
       final syncData = SyncData(
         tasks: [
-          Task(
-            id: '1',
-            title: 'Test Task',
-            createdAt: DateTime(2025, 1, 1),
-          ),
+          Task(id: '1', title: 'Test Task', createdAt: DateTime(2025, 1, 1)),
         ],
         deletedTasks: [],
         taskGroups: [],

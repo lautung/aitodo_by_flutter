@@ -16,9 +16,7 @@ void main() {
         createdAt: DateTime(2026, 3, 1, 9, 0),
         repeatType: RepeatType.weekly,
         parentId: 'parent-1',
-        subtasks: [
-          SubTask(id: 'sub-1', title: '收集数据', isCompleted: true),
-        ],
+        subtasks: [SubTask(id: 'sub-1', title: '收集数据', isCompleted: true)],
         reminderTime: DateTime(2026, 3, 5, 17, 30),
         customTagIds: const ['tag-1', 'tag-2'],
       );
@@ -57,4 +55,3 @@ void main() {
     });
   });
 }
-

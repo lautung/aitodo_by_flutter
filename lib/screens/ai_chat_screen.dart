@@ -46,18 +46,24 @@ class _AIChatScreenState extends State<AIChatScreen> {
 
     if (savedMessages.isEmpty) {
       // 添加欢迎消息
-      _messages.add(ChatMessage(
-        content: _welcomeMessage,
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
+      _messages.add(
+        ChatMessage(
+          content: _welcomeMessage,
+          isUser: false,
+          timestamp: DateTime.now(),
+        ),
+      );
     } else {
       // 加载保存的消息
-      _messages.addAll(savedMessages.map((msg) => ChatMessage(
-        content: msg.content,
-        isUser: msg.isUser,
-        timestamp: msg.timestamp,
-      )));
+      _messages.addAll(
+        savedMessages.map(
+          (msg) => ChatMessage(
+            content: msg.content,
+            isUser: msg.isUser,
+            timestamp: msg.timestamp,
+          ),
+        ),
+      );
     }
 
     if (mounted) {
@@ -82,22 +88,20 @@ class _AIChatScreenState extends State<AIChatScreen> {
 
     setState(() {
       _isProcessing = true;
-      _messages.add(ChatMessage(
-        content: text,
-        isUser: true,
-        timestamp: now,
-      ));
+      _messages.add(ChatMessage(content: text, isUser: true, timestamp: now));
       _inputController.clear();
     });
 
     // 保存用户消息和处理消息并行执行
     await Future.wait([
-      ChatStorageService.addMessage(StoredChatMessage(
-        id: now.millisecondsSinceEpoch.toString(),
-        content: text,
-        isUser: true,
-        timestamp: now,
-      )),
+      ChatStorageService.addMessage(
+        StoredChatMessage(
+          id: now.millisecondsSinceEpoch.toString(),
+          content: text,
+          isUser: true,
+          timestamp: now,
+        ),
+      ),
       _processMessage(text),
     ]);
 
@@ -114,19 +118,37 @@ class _AIChatScreenState extends State<AIChatScreen> {
 
     // 定义任务相关的命令关键词
     final taskQueryKeywords = [
-      '有多少', '还有多少', '未完成', '已完成', '完成率',
-      '今天', '明天', '本周', '显示', '查看', '列表',
-      '删除', '完成', '待办', '任务', 'todo',
+      '有多少',
+      '还有多少',
+      '未完成',
+      '已完成',
+      '完成率',
+      '今天',
+      '明天',
+      '本周',
+      '显示',
+      '查看',
+      '列表',
+      '删除',
+      '完成',
+      '待办',
+      '任务',
+      'todo',
     ];
 
     // 检查是否是查询任务状态的命令
     bool isTaskQuery = taskQueryKeywords.any((k) => lowerText.contains(k));
 
-    if (lowerText.contains('有多少') || lowerText.contains('还有多少') || lowerText.contains('未完成')) {
+    if (lowerText.contains('有多少') ||
+        lowerText.contains('还有多少') ||
+        lowerText.contains('未完成')) {
       final activeCount = provider.activeTasks;
       final totalCount = provider.totalTasks;
       response = '你当前有 $activeCount 个未完成的任务，共 $totalCount 个任务。';
-    } else if (lowerText.contains('今天') && (lowerText.contains('要') || lowerText.contains('需要') || lowerText.contains('截止'))) {
+    } else if (lowerText.contains('今天') &&
+        (lowerText.contains('要') ||
+            lowerText.contains('需要') ||
+            lowerText.contains('截止'))) {
       final today = DateTime.now();
       final todayTasks = provider.tasks.where((t) {
         if (t.dueDate == null) return false;
@@ -152,7 +174,9 @@ class _AIChatScreenState extends State<AIChatScreen> {
     } else if (lowerText.contains('完成率')) {
       final rate = (provider.completionRate * 100).toStringAsFixed(1);
       response = '当前任务完成率为 $rate%';
-    } else if (lowerText.contains('显示') || lowerText.contains('查看') || lowerText.contains('列表')) {
+    } else if (lowerText.contains('显示') ||
+        lowerText.contains('查看') ||
+        lowerText.contains('列表')) {
       final tasks = provider.tasks.take(5).toList();
       if (tasks.isEmpty) {
         response = '当前没有任务哦～';
@@ -166,11 +190,19 @@ class _AIChatScreenState extends State<AIChatScreen> {
           response += '\n...还有 ${provider.totalTasks - 5} 个任务';
         }
       }
-    } else if (lowerText.contains('你好') || lowerText.contains('hi') || lowerText.contains('hello')) {
-      response = '你好！我是AiTODO助手，可以帮你管理任务哦～\n\n可以这样说：\n• "下周三完成报告"\n• "我有多少未完成的任务"\n• "显示任务列表"';
-    } else if (!isTaskQuery && !lowerText.contains('创建') && !lowerText.contains('添加') && !lowerText.contains('帮我') && !lowerText.contains('任务')) {
+    } else if (lowerText.contains('你好') ||
+        lowerText.contains('hi') ||
+        lowerText.contains('hello')) {
+      response =
+          '你好！我是AiTODO助手，可以帮你管理任务哦～\n\n可以这样说：\n• "下周三完成报告"\n• "我有多少未完成的任务"\n• "显示任务列表"';
+    } else if (!isTaskQuery &&
+        !lowerText.contains('创建') &&
+        !lowerText.contains('添加') &&
+        !lowerText.contains('帮我') &&
+        !lowerText.contains('任务')) {
       // 非任务相关且没有明确创建意图的消息，回复不知道
-      response = '抱歉，我不太明白你的意思 😅\n\n我可以帮你：\n• 创建任务："下周三完成报告"\n• 查询状态："我有多少未完成的任务"\n• 查看列表："显示所有任务"';
+      response =
+          '抱歉，我不太明白你的意思 😅\n\n我可以帮你：\n• 创建任务："下周三完成报告"\n• 查询状态："我有多少未完成的任务"\n• 查看列表："显示所有任务"';
     } else {
       // 尝试创建任务
       final preferRemote = context.read<AiModeProvider>().preferRemote;
@@ -180,7 +212,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
       );
 
       if (parsed.title.isEmpty) {
-        response = '抱歉，我没能理解你的意思 😅\n\n你可以：\n• 直接输入任务描述创建任务，如"下周三完成报告"\n• 输入"显示任务"查看现有任务';
+        response =
+            '抱歉，我没能理解你的意思 😅\n\n你可以：\n• 直接输入任务描述创建任务，如"下周三完成报告"\n• 输入"显示任务"查看现有任务';
       } else {
         createdTask = await provider.addTask(
           title: parsed.title,
@@ -208,23 +241,27 @@ class _AIChatScreenState extends State<AIChatScreen> {
     final aiNow = DateTime.now();
     if (mounted) {
       setState(() {
-        _messages.add(ChatMessage(
-          content: response,
-          isUser: false,
-          timestamp: aiNow,
-          createdTask: createdTask,
-        ));
+        _messages.add(
+          ChatMessage(
+            content: response,
+            isUser: false,
+            timestamp: aiNow,
+            createdTask: createdTask,
+          ),
+        );
         _isProcessing = false;
       });
     }
 
     // 保存AI回复
-    await ChatStorageService.addMessage(StoredChatMessage(
-      id: aiNow.millisecondsSinceEpoch.toString(),
-      content: response,
-      isUser: false,
-      timestamp: aiNow,
-    ));
+    await ChatStorageService.addMessage(
+      StoredChatMessage(
+        id: aiNow.millisecondsSinceEpoch.toString(),
+        content: response,
+        isUser: false,
+        timestamp: aiNow,
+      ),
+    );
 
     // 滚动到底部
     _scrollToBottom();
@@ -240,16 +277,19 @@ class _AIChatScreenState extends State<AIChatScreen> {
     }
   }
 
-  static const String _welcomeMessage = '你好！我是AiTODO助手，可以用自然语言帮我创建任务哦～\n\n比如：\n• "下周三完成项目报告"\n• "帮我创建一个紧急的工作任务"\n• "明天有个会议"\n\n也可以查询任务状态，比如：\n• "我有多少未完成的任务"\n• "显示今天要完成的任务"';
+  static const String _welcomeMessage =
+      '你好！我是AiTODO助手，可以用自然语言帮我创建任务哦～\n\n比如：\n• "下周三完成项目报告"\n• "帮我创建一个紧急的工作任务"\n• "明天有个会议"\n\n也可以查询任务状态，比如：\n• "我有多少未完成的任务"\n• "显示今天要完成的任务"';
 
   void _clearChat() {
     setState(() {
       _messages.clear();
-      _messages.add(ChatMessage(
-        content: _welcomeMessage,
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
+      _messages.add(
+        ChatMessage(
+          content: _welcomeMessage,
+          isUser: false,
+          timestamp: DateTime.now(),
+        ),
+      );
     });
     ChatStorageService.clearMessages();
   }
@@ -350,9 +390,15 @@ class _AIChatScreenState extends State<AIChatScreen> {
                         ),
                         const SizedBox(width: 8),
                         CircleAvatar(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
                           child: IconButton(
-                            icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                            icon: const Icon(
+                              Icons.send,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                             onPressed: _isProcessing ? null : _sendMessage,
                           ),
                         ),
@@ -369,30 +415,45 @@ class _AIChatScreenState extends State<AIChatScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: message.isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!message.isUser) ...[
             CircleAvatar(
               radius: 16,
               backgroundColor: Colors.blue.shade100,
-              child: Icon(Icons.smart_toy, size: 18, color: Colors.blue.shade700),
+              child: Icon(
+                Icons.smart_toy,
+                size: 18,
+                color: Colors.blue.shade700,
+              ),
             ),
             const SizedBox(width: 8),
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: message.isUser
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: message.isUser
                         ? Theme.of(context).colorScheme.primary
                         : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(16).copyWith(
-                      bottomRight: message.isUser ? const Radius.circular(4) : null,
-                      bottomLeft: !message.isUser ? const Radius.circular(4) : null,
+                      bottomRight: message.isUser
+                          ? const Radius.circular(4)
+                          : null,
+                      bottomLeft: !message.isUser
+                          ? const Radius.circular(4)
+                          : null,
                     ),
                   ),
                   child: Text(

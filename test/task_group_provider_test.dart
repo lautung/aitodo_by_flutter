@@ -65,20 +65,23 @@ void main() {
       expect(provider.groups, isEmpty);
     });
 
-    test('deleteGroup should clear selectedGroupId if deleted group was selected', () async {
-      final group = TaskGroup(
-        id: 'group-1',
-        name: '工作',
-        color: Colors.red,
-        createdAt: DateTime.now(),
-      );
-      await provider.addGroup(group);
-      provider.selectGroup('group-1');
+    test(
+      'deleteGroup should clear selectedGroupId if deleted group was selected',
+      () async {
+        final group = TaskGroup(
+          id: 'group-1',
+          name: '工作',
+          color: Colors.red,
+          createdAt: DateTime.now(),
+        );
+        await provider.addGroup(group);
+        provider.selectGroup('group-1');
 
-      await provider.deleteGroup('group-1');
+        await provider.deleteGroup('group-1');
 
-      expect(provider.selectedGroupId, isNull);
-    });
+        expect(provider.selectedGroupId, isNull);
+      },
+    );
 
     test('selectGroup should set selectedGroupId', () async {
       final group = TaskGroup(
@@ -148,20 +151,23 @@ void main() {
       expect(found, isNull);
     });
 
-    test('selectedGroup should return first group if selectedGroupId not found', () async {
-      final group1 = TaskGroup(
-        id: 'group-1',
-        name: '工作',
-        color: Colors.red,
-        createdAt: DateTime.now(),
-      );
-      await provider.addGroup(group1);
-      provider.selectGroup('non-existent-id');
+    test(
+      'selectedGroup should return first group if selectedGroupId not found',
+      () async {
+        final group1 = TaskGroup(
+          id: 'group-1',
+          name: '工作',
+          color: Colors.red,
+          createdAt: DateTime.now(),
+        );
+        await provider.addGroup(group1);
+        provider.selectGroup('non-existent-id');
 
-      // Should fall back to first group
-      expect(provider.selectedGroup, isNotNull);
-      expect(provider.selectedGroup!.name, '工作');
-    });
+        // Should fall back to first group
+        expect(provider.selectedGroup, isNotNull);
+        expect(provider.selectedGroup!.name, '工作');
+      },
+    );
 
     test('groups should be unmodifiable', () async {
       final group = TaskGroup(

@@ -15,28 +15,63 @@ class PomodoroScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
       ),
-      body: Consumer<PomodoroProvider>(
-        builder: (context, provider, child) {
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 状态显示
-              _buildStateIndicator(provider),
-              const SizedBox(height: 40),
+      body: SafeArea(
+        child: Consumer<PomodoroProvider>(
+          builder: (context, provider, child) {
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final isCompactHeight = constraints.maxHeight < 640;
+                final isVeryCompactHeight = constraints.maxHeight < 500;
+                final timerSize = isVeryCompactHeight
+                    ? 200.0
+                    : isCompactHeight
+                    ? 220.0
+                    : 250.0;
+                final sectionGap = isVeryCompactHeight
+                    ? 18.0
+                    : isCompactHeight
+                    ? 24.0
+                    : 40.0;
+                final verticalPadding = isCompactHeight ? 16.0 : 24.0;
+                final minContentHeight =
+                    constraints.maxHeight - (verticalPadding * 2);
 
-              // 计时器
-              _buildTimer(context, provider),
-              const SizedBox(height: 40),
+                return SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    32,
+                    verticalPadding,
+                    32,
+                    verticalPadding,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: minContentHeight > 0 ? minContentHeight : 0,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // 状态显示
+                        _buildStateIndicator(provider),
+                        SizedBox(height: sectionGap),
 
-              // 控制按钮
-              _buildControls(context, provider),
-              const SizedBox(height: 40),
+                        // 计时器
+                        _buildTimer(context, provider, timerSize),
+                        SizedBox(height: sectionGap),
 
-              // 统计
-              _buildStats(provider),
-            ],
-          );
-        },
+                        // 控制按钮
+                        _buildControls(context, provider),
+                        SizedBox(height: sectionGap),
+
+                        // 统计
+                        _buildStats(provider),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -81,17 +116,21 @@ class PomodoroScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTimer(BuildContext context, PomodoroProvider provider) {
-    return SizedBox(
-      width: 250,
-      height: 250,
+  Widget _buildTimer(
+    BuildContext context,
+    PomodoroProvider provider,
+    double size,
+  ) {
+    final timeFontSize = size < 220 ? 40.0 : 48.0;
+
+    return SizedBox.square(
+      dimension: size,
       child: Stack(
         alignment: Alignment.center,
         children: [
           // 进度圆环
-          SizedBox(
-            width: 250,
-            height: 250,
+          SizedBox.square(
+            dimension: size,
             child: CircularProgressIndicator(
               value: provider.progress,
               strokeWidth: 12,
@@ -107,17 +146,14 @@ class PomodoroScreen extends StatelessWidget {
             children: [
               Text(
                 provider.timeDisplay,
-                style: const TextStyle(
-                  fontSize: 48,
+                style: TextStyle(
+                  fontSize: timeFontSize,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
                 '番茄数: ${provider.completedPomodoros}',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -201,21 +237,25 @@ class PomodoroScreen extends StatelessWidget {
 
   Widget _buildStats(PomodoroProvider provider) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 32),
+      margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildStatItem(
-              '今日完成',
-              '${provider.completedPomodoros}',
-              Icons.check_circle,
+            Expanded(
+              child: _buildStatItem(
+                '今日完成',
+                '${provider.completedPomodoros}',
+                Icons.check_circle,
+              ),
             ),
-            _buildStatItem(
-              '工作时长',
-              '${provider.completedPomodoros * 25}分钟',
-              Icons.timer,
+            Expanded(
+              child: _buildStatItem(
+                '工作时长',
+                '${provider.completedPomodoros * 25}分钟',
+                Icons.timer,
+              ),
             ),
           ],
         ),
@@ -230,17 +270,13 @@ class PomodoroScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
         ),
       ],
     );

@@ -53,6 +53,15 @@ class ThemeProvider extends ChangeNotifier {
     await prefs.setInt(_colorKey, color.toARGB32());
   }
 
+  Future<void> resetToDefaults() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_themeKey);
+    await prefs.remove(_colorKey);
+    _themeMode = ThemeMode.system;
+    _seedColor = const Color(0xFF2196F3);
+    notifyListeners();
+  }
+
   bool get isDarkMode {
     if (_themeMode == ThemeMode.system) {
       return WidgetsBinding.instance.platformDispatcher.platformBrightness ==

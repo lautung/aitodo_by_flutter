@@ -21,7 +21,11 @@ class _InMemoryTaskRepository implements TaskRepository {
 
   @override
   Future<TaskDataBundle?> importTaskBundle(String filePath) async =>
-      TaskDataBundle(schemaVersion: 2, tasks: _tasks, deletedTasks: _deletedTasks);
+      TaskDataBundle(
+        schemaVersion: 2,
+        tasks: _tasks,
+        deletedTasks: _deletedTasks,
+      );
 
   @override
   Future<List<Task>> loadDeletedTasks() async => _deletedTasks;
@@ -49,16 +53,26 @@ class _FakeNotificationService implements NotificationService {
   Future<void> initialize() async {}
 
   @override
+  Future<bool> requestNotificationPermission() async => true;
+
+  @override
   Future<void> scheduleTaskReminder(Task task) async {}
 
   @override
   Future<void> cancelDailySummary() async {}
 
   @override
-  Future<void> scheduleDailySummary(TimeOfDay time, int pendingCount, {List<String>? taskTitles}) async {}
+  Future<void> scheduleDailySummary(
+    TimeOfDay time,
+    int pendingCount, {
+    List<String>? taskTitles,
+  }) async {}
 
   @override
-  Future<void> updateDailySummary(int pendingCount, {List<String>? taskTitles}) async {}
+  Future<void> updateDailySummary(
+    int pendingCount, {
+    List<String>? taskTitles,
+  }) async {}
 }
 
 Task _createTask({
@@ -97,43 +111,49 @@ void main() {
       expect(provider.canCompleteTask(provider.allTasks.first.id), true);
     });
 
-    test('canCompleteTask returns false when prerequisite not completed', () async {
-      final task1 = _createTask(id: '1', title: 'Task 1');
-      final task2 = _createTask(
-        id: '2',
-        title: 'Task 2',
-        prerequisiteIds: ['1'],
-      );
+    test(
+      'canCompleteTask returns false when prerequisite not completed',
+      () async {
+        final task1 = _createTask(id: '1', title: 'Task 1');
+        final task2 = _createTask(
+          id: '2',
+          title: 'Task 2',
+          prerequisiteIds: ['1'],
+        );
 
-      await provider.addTask(title: task1.title);
-      await provider.addTask(
-        title: task2.title,
-        customTagIds: [],
-        prerequisiteIds: [provider.allTasks.first.id],
-      );
+        await provider.addTask(title: task1.title);
+        await provider.addTask(
+          title: task2.title,
+          customTagIds: [],
+          prerequisiteIds: [provider.allTasks.first.id],
+        );
 
-      final task2Id = provider.allTasks.last.id;
-      expect(provider.canCompleteTask(task2Id), false);
-    });
+        final task2Id = provider.allTasks.last.id;
+        expect(provider.canCompleteTask(task2Id), false);
+      },
+    );
 
-    test('canCompleteTask returns true when all prerequisites completed', () async {
-      final task1 = _createTask(id: '1', title: 'Task 1');
-      final task2 = _createTask(
-        id: '2',
-        title: 'Task 2',
-        prerequisiteIds: ['1'],
-      );
+    test(
+      'canCompleteTask returns true when all prerequisites completed',
+      () async {
+        final task1 = _createTask(id: '1', title: 'Task 1');
+        final task2 = _createTask(
+          id: '2',
+          title: 'Task 2',
+          prerequisiteIds: ['1'],
+        );
 
-      await provider.addTask(title: task1.title);
-      final task1Id = provider.allTasks.first.id;
-      await provider.addTask(title: task2.title, prerequisiteIds: [task1Id]);
+        await provider.addTask(title: task1.title);
+        final task1Id = provider.allTasks.first.id;
+        await provider.addTask(title: task2.title, prerequisiteIds: [task1Id]);
 
-      // 先完成前置任务
-      await provider.toggleTaskCompletion(task1Id);
+        // 先完成前置任务
+        await provider.toggleTaskCompletion(task1Id);
 
-      final task2Id = provider.allTasks.last.id;
-      expect(provider.canCompleteTask(task2Id), true);
-    });
+        final task2Id = provider.allTasks.last.id;
+        expect(provider.canCompleteTask(task2Id), true);
+      },
+    );
 
     test('getPrerequisiteTasks returns correct list', () async {
       final task1 = _createTask(id: '1', title: 'Task 1');

@@ -51,7 +51,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Custom date range display
-                            if (provider.statsTimeFilter == StatsTimeFilter.custom &&
+                            if (provider.statsTimeFilter ==
+                                    StatsTimeFilter.custom &&
                                 provider.customStatsDateRange.$1 != null)
                               _buildCustomDateRangeDisplay(context, provider),
                             // Overview cards
@@ -109,7 +110,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     provider.setStatsTimeFilter(filter);
                   }
                 },
-                selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                selectedColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.2),
                 labelStyle: TextStyle(
                   color: isSelected
                       ? Theme.of(context).colorScheme.primary
@@ -124,7 +127,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  Future<void> _showCustomDatePicker(BuildContext context, TaskProvider provider) async {
+  Future<void> _showCustomDatePicker(
+    BuildContext context,
+    TaskProvider provider,
+  ) async {
     final currentRange = provider.customStatsDateRange;
     DateTime? startDate = currentRange.$1;
     DateTime? endDate = currentRange.$2;
@@ -206,33 +212,23 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.bar_chart,
-            size: 64,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.bar_chart, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          Text(
-            '暂无数据',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text('暂无数据', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
           const SizedBox(height: 8),
           Text(
             '添加任务后查看统计',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCustomDateRangeDisplay(BuildContext context, TaskProvider provider) {
+  Widget _buildCustomDateRangeDisplay(
+    BuildContext context,
+    TaskProvider provider,
+  ) {
     final startDate = provider.customStatsDateRange.$1;
     final endDate = provider.customStatsDateRange.$2;
 
@@ -310,9 +306,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   ) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -330,10 +324,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             const SizedBox(height: 4),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -347,9 +338,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -361,10 +350,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 const SizedBox(width: 8),
                 const Text(
                   '完成率',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -430,9 +416,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -444,10 +428,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 SizedBox(width: 8),
                 Text(
                   '分类统计',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -464,18 +445,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         sections: TaskCategory.values
                             .where((c) => tasksByCategory[c]! > 0)
                             .map((category) {
-                          return PieChartSectionData(
-                            value: tasksByCategory[category]!.toDouble(),
-                            color: category.color,
-                            radius: 35,
-                            title: '${tasksByCategory[category]}',
-                            titleStyle: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          );
-                        }).toList(),
+                              return PieChartSectionData(
+                                value: tasksByCategory[category]!.toDouble(),
+                                color: category.color,
+                                radius: 35,
+                                title: '${tasksByCategory[category]}',
+                                titleStyle: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              );
+                            })
+                            .toList(),
                       ),
                     ),
                   ),
@@ -527,9 +509,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -541,10 +521,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 const SizedBox(width: 8),
                 const Text(
                   '本周完成趋势',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -558,10 +535,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     drawVerticalLine: false,
                     horizontalInterval: 1,
                     getDrawingHorizontalLine: (value) {
-                      return FlLine(
-                        color: Colors.grey[300],
-                        strokeWidth: 1,
-                      );
+                      return FlLine(color: Colors.grey[300], strokeWidth: 1);
                     },
                   ),
                   titlesData: FlTitlesData(
@@ -662,9 +636,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -676,10 +648,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 const SizedBox(width: 8),
                 const Text(
                   '任务完成热力图',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -695,10 +664,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             // 年度热力图
             const Text(
               '年度概览',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             HeatmapCalendar(
@@ -712,7 +678,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  void _showDayTasks(BuildContext context, TaskProvider provider, DateTime date) {
+  void _showDayTasks(
+    BuildContext context,
+    TaskProvider provider,
+    DateTime date,
+  ) {
     final tasks = provider.getTasksCompletedOn(date);
 
     showModalBottomSheet(
@@ -739,7 +709,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       color: Colors.green.shade100,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.check_circle, color: Colors.green.shade700),
+                    child: Icon(
+                      Icons.check_circle,
+                      color: Colors.green.shade700,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -785,9 +758,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             const SizedBox(height: 8),
                             Text(
                               '暂无完成的任务',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                              ),
+                              style: TextStyle(color: Colors.grey[600]),
                             ),
                           ],
                         ),
@@ -821,7 +792,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: task.category.color.withValues(alpha: 0.1),
+                                color: task.category.color.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -886,15 +859,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       color: Colors.blue.shade100,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.auto_awesome, color: Colors.blue.shade700),
+                    child: Icon(
+                      Icons.auto_awesome,
+                      color: Colors.blue.shade700,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   const Text(
                     'AI任务摘要',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
                   IconButton(
@@ -913,40 +886,36 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
                 child: Text(
                   summary,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.6,
-                  ),
+                  style: const TextStyle(fontSize: 14, height: 1.6),
                 ),
               ),
               const SizedBox(height: 20),
               // Suggestions
               const Text(
                 '💡 改进建议',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              ...suggestions.map((suggestion) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('• ', style: TextStyle(fontSize: 14)),
-                        Expanded(
-                          child: Text(
-                            suggestion,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade700,
-                            ),
+              ...suggestions.map(
+                (suggestion) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('• ', style: TextStyle(fontSize: 14)),
+                      Expanded(
+                        child: Text(
+                          suggestion,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
                           ),
                         ),
-                      ],
-                    ),
-                  )),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),

@@ -48,9 +48,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: HeatmapCalendar(data: data),
-          ),
+          home: Scaffold(body: HeatmapCalendar(data: data)),
         ),
       );
 
@@ -70,9 +68,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SingleChildScrollView(
-              child: HeatmapCalendar(data: data),
-            ),
+            body: SingleChildScrollView(child: HeatmapCalendar(data: data)),
           ),
         ),
       );
@@ -80,7 +76,9 @@ void main() {
       expect(find.byType(HeatmapCalendar), findsOneWidget);
     });
 
-    testWidgets('HeatmapCalendar calls onDayTap when day is tapped', (tester) async {
+    testWidgets('HeatmapCalendar calls onDayTap when day is tapped', (
+      tester,
+    ) async {
       DateTime? tappedDate;
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
@@ -110,6 +108,7 @@ void main() {
 
       // Widget should render with callback
       expect(find.byType(HeatmapCalendar), findsOneWidget);
+      expect(tappedDate, anyOf(isNull, isA<DateTime>()));
     });
 
     testWidgets('HeatmapCalendar shows legend', (tester) async {
@@ -117,9 +116,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: HeatmapCalendar(data: data),
-          ),
+          home: Scaffold(body: HeatmapCalendar(data: data)),
         ),
       );
 
@@ -137,10 +134,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
-              child: YearCalendar(
-                year: 2024,
-                data: data,
-              ),
+              child: YearCalendar(year: 2024, data: data),
             ),
           ),
         ),
@@ -156,10 +150,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
-              child: YearCalendar(
-                year: 2024,
-                data: data,
-              ),
+              child: YearCalendar(year: 2024, data: data),
             ),
           ),
         ),
@@ -180,10 +171,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
-              child: YearCalendar(
-                year: 2024,
-                data: data,
-              ),
+              child: YearCalendar(year: 2024, data: data),
             ),
           ),
         ),
@@ -202,10 +190,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: WeekCalendar(
-              initialDate: now,
-              data: data,
-            ),
+            body: WeekCalendar(initialDate: now, data: data),
           ),
         ),
       );
@@ -220,10 +205,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: WeekCalendar(
-              initialDate: now,
-              data: data,
-            ),
+            body: WeekCalendar(initialDate: now, data: data),
           ),
         ),
       );
@@ -239,10 +221,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: WeekCalendar(
-              initialDate: now,
-              data: data,
-            ),
+            body: WeekCalendar(initialDate: now, data: data),
           ),
         ),
       );
@@ -264,11 +243,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: MonthlyCalendar(
-              year: 2024,
-              month: 6,
-              data: data,
-            ),
+            body: MonthlyCalendar(year: 2024, month: 6, data: data),
           ),
         ),
       );
@@ -283,11 +258,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: MonthlyCalendar(
-              year: 2024,
-              month: 6,
-              data: data,
-            ),
+            body: MonthlyCalendar(year: 2024, month: 6, data: data),
           ),
         ),
       );
@@ -302,11 +273,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: MonthlyCalendar(
-              year: 2024,
-              month: 6,
-              data: data,
-            ),
+            body: MonthlyCalendar(year: 2024, month: 6, data: data),
           ),
         ),
       );

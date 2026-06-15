@@ -63,7 +63,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   void _deleteSubtask(String subtaskId) {
-    final updatedSubtasks = _task.subtasks.where((s) => s.id != subtaskId).toList();
+    final updatedSubtasks = _task.subtasks
+        .where((s) => s.id != subtaskId)
+        .toList();
 
     setState(() {
       _task = _task.copyWith(subtasks: updatedSubtasks);
@@ -108,9 +110,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Future<void> _navigateToEdit() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => TaskFormScreen(task: _task),
-      ),
+      MaterialPageRoute(builder: (_) => TaskFormScreen(task: _task)),
     );
     if (!mounted) return;
     final latestTask = context.read<TaskProvider>().getTaskById(_task.id);
@@ -133,14 +133,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: _shareTask,
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: _navigateToEdit,
-          ),
+          IconButton(icon: const Icon(Icons.share), onPressed: _shareTask),
+          IconButton(icon: const Icon(Icons.edit), onPressed: _navigateToEdit),
         ],
       ),
       body: SingleChildScrollView(
@@ -161,21 +155,28 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           value: _task.isCompleted,
                           onChanged: (_) async {
                             final provider = context.read<TaskProvider>();
-                            if (!_task.isCompleted && !provider.canCompleteTask(_task.id)) {
+                            if (!_task.isCompleted &&
+                                !provider.canCompleteTask(_task.id)) {
                               // 显示前置任务未完成的提示
-                              final prereqs = provider.getPrerequisiteTasks(_task.id);
-                              final pendingPrereqs = prereqs.where((t) => !t.isCompleted).toList();
-                              if (!mounted) return;
+                              final prereqs = provider.getPrerequisiteTasks(
+                                _task.id,
+                              );
+                              final pendingPrereqs = prereqs
+                                  .where((t) => !t.isCompleted)
+                                  .toList();
+                              if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('请先完成前置任务: ${pendingPrereqs.map((t) => t.title).join(", ")}'),
+                                  content: Text(
+                                    '请先完成前置任务: ${pendingPrereqs.map((t) => t.title).join(", ")}',
+                                  ),
                                   backgroundColor: Colors.orange,
                                 ),
                               );
                               return;
                             }
                             await provider.toggleTaskCompletion(_task.id);
-                            if (!mounted) return;
+                            if (!context.mounted) return;
                             Navigator.pop(context);
                           },
                         ),
@@ -193,15 +194,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         ),
                       ],
                     ),
-                    if (_task.description != null && _task.description!.isNotEmpty) ...[
+                    if (_task.description != null &&
+                        _task.description!.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Padding(
                         padding: const EdgeInsets.only(left: 48),
                         child: Text(
                           _task.description!,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                          ),
+                          style: TextStyle(color: Colors.grey[600]),
                         ),
                       ),
                     ],
@@ -234,7 +234,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     _buildInfoRow(
                       Icons.calendar_today,
                       '截止日期',
-                      _task.dueDate != null ? dateFormat.format(_task.dueDate!) : '未设置',
+                      _task.dueDate != null
+                          ? dateFormat.format(_task.dueDate!)
+                          : '未设置',
                       null,
                     ),
                     const Divider(),
@@ -260,17 +262,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               children: [
                 const Text(
                   '子任务',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 if (_task.subtasks.isNotEmpty)
                   Text(
                     '${_task.subtasks.where((s) => s.isCompleted).length}/${_task.subtasks.length}',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(color: Colors.grey[600]),
                   ),
               ],
             ),
@@ -327,18 +324,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.checklist,
-                        size: 48,
-                        color: Colors.grey[300],
-                      ),
+                      Icon(Icons.checklist, size: 48, color: Colors.grey[300]),
                       const SizedBox(height: 8),
-                      Text(
-                        '暂无子任务',
-                        style: TextStyle(
-                          color: Colors.grey[500],
-                        ),
-                      ),
+                      Text('暂无子任务', style: TextStyle(color: Colors.grey[500])),
                     ],
                   ),
                 ),
@@ -351,24 +339,23 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, Color? color) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value,
+    Color? color,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Icon(icon, size: 20, color: color ?? Colors.grey[600]),
           const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(color: Colors.grey[600]),
-          ),
+          Text(label, style: TextStyle(color: Colors.grey[600])),
           const Spacer(),
           Text(
             value,
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: color,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w500, color: color),
           ),
         ],
       ),
@@ -388,10 +375,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             children: [
               Icon(Icons.link, size: 20, color: Colors.grey[600]),
               const SizedBox(width: 12),
-              Text(
-                '前置任务',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
+              Text('前置任务', style: TextStyle(color: Colors.grey[600])),
               const Spacer(),
               IconButton(
                 icon: const Icon(Icons.add, size: 20),
@@ -403,34 +387,38 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           ),
           if (prereqs.isNotEmpty) ...[
             const SizedBox(height: 8),
-            ...prereqs.map((prereq) => Padding(
-              padding: const EdgeInsets.only(left: 32, bottom: 4),
-              child: Row(
-                children: [
-                  Icon(
-                    prereq.isCompleted ? Icons.check_circle : Icons.pending,
-                    size: 16,
-                    color: prereq.isCompleted ? Colors.green : Colors.orange,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      prereq.title,
-                      style: TextStyle(
-                        decoration: prereq.isCompleted ? TextDecoration.lineThrough : null,
-                        color: prereq.isCompleted ? Colors.grey : null,
+            ...prereqs.map(
+              (prereq) => Padding(
+                padding: const EdgeInsets.only(left: 32, bottom: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      prereq.isCompleted ? Icons.check_circle : Icons.pending,
+                      size: 16,
+                      color: prereq.isCompleted ? Colors.green : Colors.orange,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        prereq.title,
+                        style: TextStyle(
+                          decoration: prereq.isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
+                          color: prereq.isCompleted ? Colors.grey : null,
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 16),
-                    onPressed: () => _removePrerequisite(prereq.id),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 16),
+                      onPressed: () => _removePrerequisite(prereq.id),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
               ),
-            )),
+            ),
           ],
         ],
       ),
@@ -464,10 +452,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   padding: EdgeInsets.all(16),
                   child: Text(
                     '选择前置任务',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
                 Expanded(
@@ -485,8 +470,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             final task = availableTasks[index];
                             return ListTile(
                               leading: Icon(
-                                task.isCompleted ? Icons.check_circle : Icons.pending,
-                                color: task.isCompleted ? Colors.green : Colors.orange,
+                                task.isCompleted
+                                    ? Icons.check_circle
+                                    : Icons.pending,
+                                color: task.isCompleted
+                                    ? Colors.green
+                                    : Colors.orange,
                               ),
                               title: Text(task.title),
                               subtitle: task.description != null
@@ -513,7 +502,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   void _addPrerequisite(String prerequisiteId) {
-    final updatedPrerequisites = List<String>.from(_task.prerequisiteIds)..add(prerequisiteId);
+    final updatedPrerequisites = List<String>.from(_task.prerequisiteIds)
+      ..add(prerequisiteId);
     setState(() {
       _task = _task.copyWith(prerequisiteIds: updatedPrerequisites);
     });
@@ -521,7 +511,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   void _removePrerequisite(String prerequisiteId) {
-    final updatedPrerequisites = _task.prerequisiteIds.where((id) => id != prerequisiteId).toList();
+    final updatedPrerequisites = _task.prerequisiteIds
+        .where((id) => id != prerequisiteId)
+        .toList();
     setState(() {
       _task = _task.copyWith(prerequisiteIds: updatedPrerequisites);
     });
@@ -549,7 +541,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           title: Text(
             subtask.title,
             style: TextStyle(
-              decoration: subtask.isCompleted ? TextDecoration.lineThrough : null,
+              decoration: subtask.isCompleted
+                  ? TextDecoration.lineThrough
+                  : null,
               color: subtask.isCompleted ? Colors.grey : null,
             ),
           ),

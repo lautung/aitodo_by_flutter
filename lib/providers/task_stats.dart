@@ -27,7 +27,8 @@ class TaskStats {
   int get activeTasks => tasks.where((t) => !t.isCompleted).length;
 
   /// 完成率
-  double get completionRate => totalTasks > 0 ? completedTasks / totalTasks : 0.0;
+  double get completionRate =>
+      totalTasks > 0 ? completedTasks / totalTasks : 0.0;
 
   /// 按分类统计任务数
   Map<TaskCategory, int> get tasksByCategory {
@@ -62,11 +63,13 @@ class TaskStats {
       final dayEnd = dayStart.add(const Duration(days: 1));
 
       final count = tasks
-          .where((t) =>
-              t.isCompleted &&
-              t.completedAt != null &&
-              t.completedAt!.isAfter(dayStart) &&
-              t.completedAt!.isBefore(dayEnd))
+          .where(
+            (t) =>
+                t.isCompleted &&
+                t.completedAt != null &&
+                t.completedAt!.isAfter(dayStart) &&
+                t.completedAt!.isBefore(dayEnd),
+          )
           .length;
 
       result[dayStart] = count;
@@ -86,11 +89,13 @@ class TaskStats {
       final dayEnd = dayStart.add(const Duration(days: 1));
 
       final completedCount = tasks
-          .where((t) =>
-              t.isCompleted &&
-              t.completedAt != null &&
-              t.completedAt!.isAfter(dayStart) &&
-              t.completedAt!.isBefore(dayEnd))
+          .where(
+            (t) =>
+                t.isCompleted &&
+                t.completedAt != null &&
+                t.completedAt!.isAfter(dayStart) &&
+                t.completedAt!.isBefore(dayEnd),
+          )
           .length;
 
       result[dayStart] = completedCount;
@@ -105,11 +110,13 @@ class TaskStats {
     final dayEnd = dayStart.add(const Duration(days: 1));
 
     return tasks
-        .where((t) =>
-            t.isCompleted &&
-            t.completedAt != null &&
-            t.completedAt!.isAfter(dayStart) &&
-            t.completedAt!.isBefore(dayEnd))
+        .where(
+          (t) =>
+              t.isCompleted &&
+              t.completedAt != null &&
+              t.completedAt!.isAfter(dayStart) &&
+              t.completedAt!.isBefore(dayEnd),
+        )
         .toList();
   }
 
@@ -124,11 +131,13 @@ class TaskStats {
       final dayEnd = dayStart.add(const Duration(days: 1));
 
       final count = tasks
-          .where((t) =>
-              t.isCompleted &&
-              t.completedAt != null &&
-              t.completedAt!.isAfter(dayStart) &&
-              t.completedAt!.isBefore(dayEnd))
+          .where(
+            (t) =>
+                t.isCompleted &&
+                t.completedAt != null &&
+                t.completedAt!.isAfter(dayStart) &&
+                t.completedAt!.isBefore(dayEnd),
+          )
           .length;
       result.add(count);
     }
@@ -155,8 +164,12 @@ class TaskStats {
       case StatsTimeFilter.today:
         final dayStart = today;
         final dayEnd = today.add(const Duration(days: 1));
-        return tasks.where((t) =>
-            t.createdAt.isAfter(dayStart) && t.createdAt.isBefore(dayEnd)).toList();
+        return tasks
+            .where(
+              (t) =>
+                  t.createdAt.isAfter(dayStart) && t.createdAt.isBefore(dayEnd),
+            )
+            .toList();
       case StatsTimeFilter.custom:
         if (customStatsStartDate == null || customStatsEndDate == null) {
           return tasks;
@@ -171,8 +184,13 @@ class TaskStats {
           customStatsEndDate!.month,
           customStatsEndDate!.day,
         ).add(const Duration(days: 1));
-        return tasks.where((t) =>
-            t.createdAt.isAfter(startDate) && t.createdAt.isBefore(endDate)).toList();
+        return tasks
+            .where(
+              (t) =>
+                  t.createdAt.isAfter(startDate) &&
+                  t.createdAt.isBefore(endDate),
+            )
+            .toList();
     }
   }
 
@@ -182,14 +200,16 @@ class TaskStats {
       filteredTasksByTime.where((t) => t.isCompleted).length;
   int get filteredActiveTasks =>
       filteredTasksByTime.where((t) => !t.isCompleted).length;
-  double get filteredCompletionRate =>
-      filteredTotalTasks > 0 ? filteredCompletedTasks / filteredTotalTasks : 0.0;
+  double get filteredCompletionRate => filteredTotalTasks > 0
+      ? filteredCompletedTasks / filteredTotalTasks
+      : 0.0;
 
   Map<TaskCategory, int> get filteredTasksByCategory {
     final Map<TaskCategory, int> result = {};
     for (final category in TaskCategory.values) {
-      result[category] =
-          filteredTasksByTime.where((t) => t.category == category).length;
+      result[category] = filteredTasksByTime
+          .where((t) => t.category == category)
+          .length;
     }
     return result;
   }

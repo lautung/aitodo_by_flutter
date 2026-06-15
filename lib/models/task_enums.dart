@@ -1,20 +1,12 @@
 /// 任务过滤类型
-enum TaskFilter {
-  all,
-  active,
-  completed,
-}
+enum TaskFilter { all, active, completed }
 
 /// 任务排序类型
-enum TaskSortType {
-  createdTime,
-  dueDate,
-  priority,
-}
+enum TaskSortType { createdTime, dueDate, priority }
 
 /// 标签筛选模式
 enum TagFilterMode {
-  or,  // 任一匹配
+  or, // 任一匹配
   and, // 全部匹配
 }
 

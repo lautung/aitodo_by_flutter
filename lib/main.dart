@@ -11,6 +11,7 @@ import 'providers/notification_settings_provider.dart';
 import 'providers/sync_provider.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
+import 'widgets/compliance_gate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +28,9 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => TaskProvider()..initialize()),
-        ChangeNotifierProvider(create: (_) => TaskGroupProvider()..initialize()),
+        ChangeNotifierProvider(
+          create: (_) => TaskGroupProvider()..initialize(),
+        ),
         ChangeNotifierProvider(create: (_) => PomodoroProvider()),
         ChangeNotifierProvider(create: (_) => TagProvider()),
         ChangeNotifierProvider(create: (_) => PriorityProvider()),
@@ -47,10 +50,7 @@ class MyApp extends StatelessWidget {
                 brightness: Brightness.light,
               ),
               useMaterial3: true,
-              appBarTheme: const AppBarTheme(
-                centerTitle: true,
-                elevation: 0,
-              ),
+              appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
               cardTheme: CardThemeData(
                 elevation: 2,
                 shape: RoundedRectangleBorder(
@@ -73,10 +73,7 @@ class MyApp extends StatelessWidget {
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,
-              appBarTheme: const AppBarTheme(
-                centerTitle: true,
-                elevation: 0,
-              ),
+              appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
               cardTheme: CardThemeData(
                 elevation: 2,
                 shape: RoundedRectangleBorder(
@@ -93,7 +90,7 @@ class MyApp extends StatelessWidget {
                 ),
               ),
             ),
-            home: const HomeScreen(),
+            home: const ComplianceGate(child: HomeScreen()),
           );
         },
       ),

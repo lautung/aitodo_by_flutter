@@ -24,7 +24,10 @@
       "Bash(flutter run:*)",
       "Bash(flutter pub:*)",
       "mcp__context7__resolve-library-id",
-      "mcp__context7__query-docs"
+      "mcp__context7__query-docs",
+      "WebSearch",
+      "Bash(flutter build:*)",
+      "Bash(flutter analyze:*)"
     ]
   }
 }

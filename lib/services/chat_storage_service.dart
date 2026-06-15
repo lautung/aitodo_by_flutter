@@ -50,7 +50,9 @@ class ChatStorageService {
     try {
       final List<dynamic> messagesList = json.decode(messagesJson);
       return messagesList
-          .map((json) => StoredChatMessage.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => StoredChatMessage.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
     } catch (e) {
       return [];

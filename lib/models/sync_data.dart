@@ -33,18 +33,26 @@ class SyncData {
 
   factory SyncData.fromJson(Map<String, dynamic> json) {
     return SyncData(
-      tasks: (json['tasks'] as List?)
-          ?.map((t) => Task.fromJson(t as Map<String, dynamic>))
-          .toList() ?? [],
-      deletedTasks: (json['deletedTasks'] as List?)
-          ?.map((t) => Task.fromJson(t as Map<String, dynamic>))
-          .toList() ?? [],
-      taskGroups: (json['taskGroups'] as List?)
-          ?.map((g) => TaskGroup.fromJson(g as Map<String, dynamic>))
-          .toList() ?? [],
-      tags: (json['tags'] as List?)
-          ?.map((t) => CustomTag.fromJson(t as Map<String, dynamic>))
-          .toList() ?? [],
+      tasks:
+          (json['tasks'] as List?)
+              ?.map((t) => Task.fromJson(t as Map<String, dynamic>))
+              .toList() ??
+          [],
+      deletedTasks:
+          (json['deletedTasks'] as List?)
+              ?.map((t) => Task.fromJson(t as Map<String, dynamic>))
+              .toList() ??
+          [],
+      taskGroups:
+          (json['taskGroups'] as List?)
+              ?.map((g) => TaskGroup.fromJson(g as Map<String, dynamic>))
+              .toList() ??
+          [],
+      tags:
+          (json['tags'] as List?)
+              ?.map((t) => CustomTag.fromJson(t as Map<String, dynamic>))
+              .toList() ??
+          [],
       lastModified: json['lastModified'] != null
           ? DateTime.parse(json['lastModified'] as String)
           : DateTime.now(),
@@ -71,12 +79,7 @@ class SyncData {
 }
 
 /// 同步结果
-enum SyncStatus {
-  idle,
-  syncing,
-  success,
-  error,
-}
+enum SyncStatus { idle, syncing, success, error }
 
 /// 同步结果
 class SyncResult {
@@ -93,11 +96,7 @@ class SyncResult {
   });
 
   factory SyncResult.success({SyncData? data}) {
-    return SyncResult(
-      success: true,
-      timestamp: DateTime.now(),
-      data: data,
-    );
+    return SyncResult(success: true, timestamp: DateTime.now(), data: data);
   }
 
   factory SyncResult.failure(String errorMessage) {
@@ -111,7 +110,7 @@ class SyncResult {
 
 /// 冲突解决策略
 enum ConflictStrategy {
-  localWins,   // 本地优先
-  remoteWins,  // 远程优先
-  newerWins,   // 较新的优先
+  localWins, // 本地优先
+  remoteWins, // 远程优先
+  newerWins, // 较新的优先
 }

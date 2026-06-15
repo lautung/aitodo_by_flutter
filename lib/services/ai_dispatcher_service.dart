@@ -16,10 +16,7 @@ class AiDispatcherService {
     _remoteClient = client;
   }
 
-  Future<ParsedTask> parseTask(
-    String text, {
-    bool preferRemote = true,
-  }) async {
+  Future<ParsedTask> parseTask(String text, {bool preferRemote = false}) async {
     if (preferRemote && _remoteClient != null) {
       try {
         final remoteResult = await _remoteClient!.parseTask(text);
@@ -33,4 +30,3 @@ class AiDispatcherService {
     return _localNlpService.parseTask(text);
   }
 }
-

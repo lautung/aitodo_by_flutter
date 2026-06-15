@@ -79,11 +79,11 @@ class CustomRepeat {
     final intervalStr = interval == 1 ? '' : '$interval';
     switch (unit) {
       case RepeatUnit.day:
-        return '每${intervalStr}天';
+        return '每$intervalStr天';
       case RepeatUnit.week:
-        return '每${intervalStr}周';
+        return '每$intervalStr周';
       case RepeatUnit.month:
-        return '每${intervalStr}月';
+        return '每$intervalStr月';
     }
   }
 
@@ -158,18 +158,10 @@ class CustomTag {
   final String name;
   final Color color;
 
-  CustomTag({
-    required this.id,
-    required this.name,
-    required this.color,
-  });
+  CustomTag({required this.id, required this.name, required this.color});
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'color': color.toARGB32(),
-    };
+    return {'id': id, 'name': name, 'color': color.toARGB32()};
   }
 
   factory CustomTag.fromJson(Map<String, dynamic> json) {
@@ -283,7 +275,8 @@ class Task {
   final String? parentId;
   final List<SubTask> subtasks;
   final DateTime? reminderTime;
-  final List<int> reminderMinutesBefore; // 提前提醒分钟数列表，如 [1440, 60, 15] 表示提前1天、1小时、15分钟提醒
+  final List<int>
+  reminderMinutesBefore; // 提前提醒分钟数列表，如 [1440, 60, 15] 表示提前1天、1小时、15分钟提醒
   final List<String> customTagIds; // 自定义标签ID列表
   final String? groupId; // 任务分组ID
   final List<String> prerequisiteIds; // 前置任务ID列表
@@ -359,7 +352,8 @@ class Task {
       subtasks: subtasks ?? this.subtasks,
       reminderTime: reminderTime ?? this.reminderTime,
       sortOrder: sortOrder ?? this.sortOrder,
-      reminderMinutesBefore: reminderMinutesBefore ?? this.reminderMinutesBefore,
+      reminderMinutesBefore:
+          reminderMinutesBefore ?? this.reminderMinutesBefore,
       customTagIds: customTagIds ?? this.customTagIds,
       groupId: groupId ?? this.groupId,
       prerequisiteIds: prerequisiteIds ?? this.prerequisiteIds,
@@ -406,7 +400,9 @@ class Task {
 
     List<int> reminderMinutesBeforeList = [];
     if (json['reminderMinutesBefore'] != null) {
-      reminderMinutesBeforeList = List<int>.from(json['reminderMinutesBefore'] as List);
+      reminderMinutesBeforeList = List<int>.from(
+        json['reminderMinutesBefore'] as List,
+      );
     }
 
     List<String> prerequisiteIdsList = [];
@@ -416,7 +412,9 @@ class Task {
 
     CustomRepeat? customRepeatData;
     if (json['customRepeat'] != null) {
-      customRepeatData = CustomRepeat.fromJson(json['customRepeat'] as Map<String, dynamic>);
+      customRepeatData = CustomRepeat.fromJson(
+        json['customRepeat'] as Map<String, dynamic>,
+      );
     }
 
     return Task(

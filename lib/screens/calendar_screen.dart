@@ -77,7 +77,10 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Widget _buildYearView(
-      TaskProvider provider, Map<DateTime, int> heatmapData, DateTime now) {
+    TaskProvider provider,
+    Map<DateTime, int> heatmapData,
+    DateTime now,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -145,7 +148,11 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Widget _buildMonthlyView(
-      TaskProvider provider, Map<DateTime, int> monthlyData, int year, int month) {
+    TaskProvider provider,
+    Map<DateTime, int> monthlyData,
+    int year,
+    int month,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -183,9 +190,7 @@ class _CalendarScreenState extends State<CalendarScreen>
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -197,16 +202,18 @@ class _CalendarScreenState extends State<CalendarScreen>
                 const SizedBox(width: 8),
                 const Text(
                   '今日黄历',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: _getLuckColor(huangliInfo.luck).withValues(alpha: 0.1),
+                    color: _getLuckColor(
+                      huangliInfo.luck,
+                    ).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -246,13 +253,26 @@ class _CalendarScreenState extends State<CalendarScreen>
                     children: [
                       const Row(
                         children: [
-                          Icon(Icons.check_circle, size: 14, color: Colors.green),
+                          Icon(
+                            Icons.check_circle,
+                            size: 14,
+                            color: Colors.green,
+                          ),
                           SizedBox(width: 4),
-                          Text('宜', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                          Text(
+                            '宜',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(huangliInfo.yi, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                      Text(
+                        huangliInfo.yi,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      ),
                     ],
                   ),
                 ),
@@ -264,11 +284,20 @@ class _CalendarScreenState extends State<CalendarScreen>
                         children: [
                           Icon(Icons.cancel, size: 14, color: Colors.red),
                           SizedBox(width: 4),
-                          Text('忌', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                          Text(
+                            '忌',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(huangliInfo.ji, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                      Text(
+                        huangliInfo.ji,
+                        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      ),
                     ],
                   ),
                 ),
@@ -290,7 +319,11 @@ class _CalendarScreenState extends State<CalendarScreen>
       ),
       child: Text(
         text,
-        style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w500),
+        style: TextStyle(
+          fontSize: 12,
+          color: color,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
@@ -307,7 +340,10 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Widget _buildWeekView(
-      TaskProvider provider, Map<DateTime, int> heatmapData, DateTime now) {
+    TaskProvider provider,
+    Map<DateTime, int> heatmapData,
+    DateTime now,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -336,7 +372,10 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Widget _buildWeekStats(
-      TaskProvider provider, Map<DateTime, int> heatmapData, DateTime now) {
+    TaskProvider provider,
+    Map<DateTime, int> heatmapData,
+    DateTime now,
+  ) {
     // 获取本周的任务统计
     final weekStart = now.subtract(Duration(days: now.weekday % 7));
     var completedTasks = 0;
@@ -350,9 +389,7 @@ class _CalendarScreenState extends State<CalendarScreen>
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -364,12 +401,7 @@ class _CalendarScreenState extends State<CalendarScreen>
               Icons.check_circle,
               Colors.green,
             ),
-            _buildStatItem(
-              '本周天数',
-              '7',
-              Icons.calendar_today,
-              Colors.blue,
-            ),
+            _buildStatItem('本周天数', '7', Icons.calendar_today, Colors.blue),
             _buildStatItem(
               '日均',
               (completedTasks / 7).toStringAsFixed(1),
@@ -383,7 +415,11 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Widget _buildDayView(
-      TaskProvider provider, Map<DateTime, int> heatmapData, DateTime now, TaskProvider taskProvider) {
+    TaskProvider provider,
+    Map<DateTime, int> heatmapData,
+    DateTime now,
+    TaskProvider taskProvider,
+  ) {
     final selectedDate = now;
 
     return DayCalendar(
@@ -417,17 +453,17 @@ class _CalendarScreenState extends State<CalendarScreen>
     final now = DateTime.now();
     final yearStart = DateTime(now.year, 1, 1);
     final yearTotal = provider.allTasks
-        .where((t) =>
-            t.isCompleted &&
-            t.completedAt != null &&
-            t.completedAt!.isAfter(yearStart))
+        .where(
+          (t) =>
+              t.isCompleted &&
+              t.completedAt != null &&
+              t.completedAt!.isAfter(yearStart),
+        )
         .length;
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Row(
@@ -458,7 +494,11 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   Widget _buildStatItem(
-      String label, String value, IconData icon, Color color) {
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
         Icon(icon, color: color, size: 28),
@@ -471,19 +511,16 @@ class _CalendarScreenState extends State<CalendarScreen>
             color: color,
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
       ],
     );
   }
 
   void _showDayTasks(
-      BuildContext context, TaskProvider provider, DateTime date) {
+    BuildContext context,
+    TaskProvider provider,
+    DateTime date,
+  ) {
     final tasks = provider.getTasksCompletedOn(date);
 
     showModalBottomSheet(
@@ -521,7 +558,10 @@ class _CalendarScreenState extends State<CalendarScreen>
                         color: Colors.green.shade100,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(Icons.check_circle, color: Colors.green.shade700),
+                      child: Icon(
+                        Icons.check_circle,
+                        color: Colors.green.shade700,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -536,16 +576,20 @@ class _CalendarScreenState extends State<CalendarScreen>
                             ),
                           ),
                           // 显示农历信息
-                          Builder(builder: (context) {
-                            final lunarInfo = _lunarService.getLunarInfo(date);
-                            return Text(
-                              '农历: ${lunarInfo.monthName}${lunarInfo.dayName}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
-                            );
-                          }),
+                          Builder(
+                            builder: (context) {
+                              final lunarInfo = _lunarService.getLunarInfo(
+                                date,
+                              );
+                              return Text(
+                                '农历: ${lunarInfo.monthName}${lunarInfo.dayName}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -588,9 +632,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                               const SizedBox(height: 8),
                               Text(
                                 '暂无任务',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                ),
+                                style: TextStyle(color: Colors.grey[600]),
                               ),
                             ],
                           ),
@@ -630,7 +672,9 @@ class _CalendarScreenState extends State<CalendarScreen>
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: task.category.color.withValues(alpha: 0.1),
+                                  color: task.category.color.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -665,19 +709,10 @@ class _CalendarScreenState extends State<CalendarScreen>
         children: [
           Text(
             value,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: color, fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-            ),
-          ),
+          Text(label, style: TextStyle(color: color, fontSize: 12)),
         ],
       ),
     );

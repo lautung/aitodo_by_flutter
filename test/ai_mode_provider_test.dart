@@ -4,14 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('AiModeProvider', () {
-    test('should default to remoteFirst when no saved value', () async {
+    test('should default to smartLocal when no saved value', () async {
       SharedPreferences.setMockInitialValues({});
 
       final provider = AiModeProvider();
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
-      expect(provider.mode, AiParseMode.remoteFirst);
-      expect(provider.preferRemote, isTrue);
+      expect(provider.mode, AiParseMode.smartLocal);
+      expect(provider.preferRemote, isFalse);
     });
 
     test('should load localFirst from SharedPreferences', () async {

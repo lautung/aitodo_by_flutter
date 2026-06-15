@@ -26,10 +26,7 @@ void main() {
         createdAt: DateTime(2024, 1, 1),
       );
 
-      final updated = task.copyWith(
-        title: 'Updated',
-        priority: Priority.high,
-      );
+      final updated = task.copyWith(title: 'Updated', priority: Priority.high);
 
       expect(updated.title, 'Updated');
       expect(updated.priority, Priority.high);

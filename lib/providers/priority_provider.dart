@@ -32,12 +32,7 @@ class CustomPriority {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'color': color.toARGB32(),
-      'level': level,
-    };
+    return {'id': id, 'name': name, 'color': color.toARGB32(), 'level': level};
   }
 
   factory CustomPriority.fromJson(Map<String, dynamic> json) {
@@ -88,7 +83,9 @@ class PriorityProvider extends ChangeNotifier {
 
   Future<void> _savePriorities() async {
     final prefs = await SharedPreferences.getInstance();
-    final prioritiesJson = json.encode(_customPriorities.map((p) => p.toJson()).toList());
+    final prioritiesJson = json.encode(
+      _customPriorities.map((p) => p.toJson()).toList(),
+    );
     await prefs.setString('custom_priorities', prioritiesJson);
   }
 
@@ -104,7 +101,12 @@ class PriorityProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updatePriority(String id, String name, Color color, int level) async {
+  Future<void> updatePriority(
+    String id,
+    String name,
+    Color color,
+    int level,
+  ) async {
     final index = _customPriorities.indexWhere((p) => p.id == id);
     if (index != -1) {
       _customPriorities[index] = CustomPriority(
@@ -124,6 +126,13 @@ class PriorityProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> resetToDefaults() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('custom_priorities');
+    _customPriorities = [];
+    notifyListeners();
+  }
+
   CustomPriority? getPriorityById(String id) {
     // 先查找自定义优先级
     try {
@@ -132,11 +141,26 @@ class PriorityProvider extends ChangeNotifier {
       // 再查找内置优先级
       switch (id) {
         case 'high':
-          return CustomPriority(id: 'high', name: '高', color: Colors.red, level: 3);
+          return CustomPriority(
+            id: 'high',
+            name: '高',
+            color: Colors.red,
+            level: 3,
+          );
         case 'medium':
-          return CustomPriority(id: 'medium', name: '中', color: Colors.orange, level: 2);
+          return CustomPriority(
+            id: 'medium',
+            name: '中',
+            color: Colors.orange,
+            level: 2,
+          );
         case 'low':
-          return CustomPriority(id: 'low', name: '低', color: Colors.green, level: 1);
+          return CustomPriority(
+            id: 'low',
+            name: '低',
+            color: Colors.green,
+            level: 1,
+          );
         default:
           return null;
       }
@@ -147,11 +171,26 @@ class PriorityProvider extends ChangeNotifier {
   CustomPriority fromPriority(Priority priority) {
     switch (priority) {
       case Priority.high:
-        return CustomPriority(id: 'high', name: '高', color: Colors.red, level: 3);
+        return CustomPriority(
+          id: 'high',
+          name: '高',
+          color: Colors.red,
+          level: 3,
+        );
       case Priority.medium:
-        return CustomPriority(id: 'medium', name: '中', color: Colors.orange, level: 2);
+        return CustomPriority(
+          id: 'medium',
+          name: '中',
+          color: Colors.orange,
+          level: 2,
+        );
       case Priority.low:
-        return CustomPriority(id: 'low', name: '低', color: Colors.green, level: 1);
+        return CustomPriority(
+          id: 'low',
+          name: '低',
+          color: Colors.green,
+          level: 1,
+        );
     }
   }
 }

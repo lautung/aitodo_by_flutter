@@ -20,25 +20,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isMultiSelectMode = false;
   final Set<String> _selectedTasks = {};
-  final Map<String, GlobalKey<TaskCardState>> _taskCardKeys = {};
-  String? _expandedTaskId;
-
-  void _collapseAllCards() {
-    for (final key in _taskCardKeys.values) {
-      key.currentState?.collapse();
-    }
-    _expandedTaskId = null;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _showSwipeHint();
-  }
-
-  Future<void> _showSwipeHint() async {
-    // 已移除滑动删除，不再显示提示
-  }
 
   @override
   void dispose() {
@@ -83,9 +64,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
     if (!mounted) return;
     _selectedTasks.clear();
     _toggleMultiSelectMode();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('批量操作完成')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('批量操作完成')));
   }
 
   void _batchDelete() {
@@ -109,9 +90,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
               _toggleMultiSelectMode();
               if (!context.mounted) return;
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('批量删除完成')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('批量删除完成')));
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('删除'),
@@ -164,7 +145,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
                     );
                   },
                 ),
@@ -172,41 +155,41 @@ class _TaskListScreenState extends State<TaskListScreen> {
         bottom: _isMultiSelectMode
             ? null
             : PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                context.read<TaskProvider>().setSearchQuery(value);
-              },
-              style: const TextStyle(fontSize: 14),
-              decoration: InputDecoration(
-                hintText: '搜索任务...',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          context.read<TaskProvider>().setSearchQuery('');
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+                preferredSize: const Size.fromHeight(60),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      context.read<TaskProvider>().setSearchQuery(value);
+                    },
+                    style: const TextStyle(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: '搜索任务...',
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                context.read<TaskProvider>().setSearchQuery('');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        ),
       ),
       body: Column(
         children: [
@@ -218,12 +201,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
               scrollDirection: Axis.horizontal,
               children: [
                 // Status filters
-                _buildFilterChip(
-                  context,
-                  '全部',
-                  TaskFilter.all,
-                  Icons.list,
-                ),
+                _buildFilterChip(context, '全部', TaskFilter.all, Icons.list),
                 const SizedBox(width: 8),
                 _buildFilterChip(
                   context,
@@ -307,15 +285,9 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     itemCount: tasks.length,
                     itemBuilder: (context, index) {
                       final task = tasks[index];
-                      _taskCardKeys[task.id] ??= GlobalKey();
                       return TaskCard(
                         task: task,
-                        swipeKey: _taskCardKeys[task.id],
                         onTap: () {
-                          if (_expandedTaskId != null && _expandedTaskId != task.id) {
-                            _collapseAllCards();
-                            return;
-                          }
                           if (_isMultiSelectMode) {
                             _toggleTaskSelection(task.id);
                           } else {
@@ -323,17 +295,10 @@ class _TaskListScreenState extends State<TaskListScreen> {
                           }
                         },
                         onToggle: () => provider.toggleTaskCompletion(task.id),
-                        onDelete: () => provider.deleteTask(task.id),
                         onDeleteConfirm: () => _showDeleteDialog(context, task),
                         isMultiSelectMode: _isMultiSelectMode,
                         isSelected: _selectedTasks.contains(task.id),
                         onSelect: () => _toggleTaskSelection(task.id),
-                        onCollapse: () {
-                          _expandedTaskId = null;
-                        },
-                        onExpand: () {
-                          _expandedTaskId = task.id;
-                        },
                       );
                     },
                   ),
@@ -377,7 +342,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
     IconData icon,
   ) {
     final provider = context.watch<TaskProvider>();
-    final isSelected = provider.filter == filter && provider.categoryFilter == null;
+    final isSelected =
+        provider.filter == filter && provider.categoryFilter == null;
 
     return FilterChip(
       label: Row(
@@ -403,9 +369,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         fontSize: 13,
       ),
       backgroundColor: Colors.grey[200],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       side: BorderSide.none,
     );
   }
@@ -430,10 +394,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
                     '排序方式',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -465,9 +426,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                         ? Icons.arrow_upward
                         : Icons.arrow_downward,
                   ),
-                  title: Text(
-                    provider.sortAscending ? '升序' : '降序',
-                  ),
+                  title: Text(provider.sortAscending ? '升序' : '降序'),
                   onTap: () {
                     provider.setSortType(provider.sortType);
                     Navigator.pop(context);
@@ -541,9 +500,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         fontSize: 13,
       ),
       backgroundColor: Colors.grey[200],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       side: BorderSide.none,
     );
   }
@@ -559,10 +516,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
           Container(
             width: 12,
             height: 12,
-            decoration: BoxDecoration(
-              color: tag.color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: tag.color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 4),
           Text(tag.name),
@@ -578,9 +532,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         fontSize: 13,
       ),
       backgroundColor: Colors.grey[200],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       side: BorderSide.none,
     );
   }
@@ -588,18 +540,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
   void _navigateToAdd(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const TaskFormScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const TaskFormScreen()),
     );
   }
 
   void _navigateToEdit(BuildContext context, Task task) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => TaskDetailScreen(task: task),
-      ),
+      MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task)),
     );
   }
 
@@ -627,10 +575,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
 
     if (result == true) {
-      taskProvider.deleteTask(task.id);
-      scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('任务已删除')),
-      );
+      await taskProvider.deleteTask(task.id);
+      scaffoldMessenger.showSnackBar(const SnackBar(content: Text('任务已删除')));
       return true;
     }
     return false;
