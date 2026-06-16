@@ -12,12 +12,10 @@ import 'providers/ai_mode_provider.dart';
 import 'providers/notification_settings_provider.dart';
 import 'providers/sync_provider.dart';
 import 'screens/home_screen.dart';
-import 'services/notification_service.dart';
 import 'widgets/compliance_gate.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService().initialize();
   runApp(const MyApp());
 }
 

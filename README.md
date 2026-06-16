@@ -15,7 +15,7 @@ AiTODO 是一款 Android 本地优先的待办事项应用，当前版本聚焦�
 ## 主要功能
 
 - 任务管理：创建、编辑、删除、恢复、完成/取消完成任务。
-- 任务组织：分类、标签、优先级、搜索、筛选、排序和批量操作。
+- 任务组织：分类、标签、优先级、搜索、AI 快速创建、筛选、排序和批量操作。
 - 智能解析：从自然语言中提取任务标题、日期、优先级和分类建议。
 - 提醒：为任务设置提醒时间，并支持每日未完成任务总结。
 - 日历与统计：日历视图、年度热力图、完成率、分类统计和周趋势。
@@ -31,6 +31,11 @@ AiTODO 是一款 Android 本地优先的待办事项应用，当前版本聚焦�
 - flutter_local_notifications 本地通知
 - fl_chart 图表
 - file_picker / share_plus 备份导入导出
+
+## UI 组件库
+
+- `lib/widgets/ui/` 提供可复用基础组件：surface、filter chip、info pill、section header、empty state 和命令输入框。
+- 页面级 UI 优先复用这些基础组件；业务状态和流程仍放在 `screens/`、`providers/` 或 `services/` 中。
 
 ## 开发命令
 

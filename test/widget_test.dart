@@ -22,6 +22,22 @@ void main() {
     expect(find.byType(FloatingActionButton), findsOneWidget);
   });
 
+  testWidgets('Home command input creates a task with local parser', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.enterText(find.byType(TextField).first, '项目周报');
+    await tester.tap(find.byTooltip('智能创建任务'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('tasks'), contains('项目周报'));
+    expect(find.text('项目周报'), findsWidgets);
+  });
+
   testWidgets('App shows agreement dialog on first launch', (tester) async {
     SharedPreferences.setMockInitialValues({});
 
