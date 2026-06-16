@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/pomodoro_provider.dart';
@@ -181,7 +183,7 @@ class PomodoroScreen extends StatelessWidget {
       children: [
         // 重置按钮
         IconButton.filled(
-          onPressed: provider.reset,
+          onPressed: () => unawaited(provider.reset()),
           icon: const Icon(Icons.refresh),
           style: IconButton.styleFrom(
             backgroundColor: Colors.grey[300],
@@ -193,16 +195,16 @@ class PomodoroScreen extends StatelessWidget {
         // 主按钮
         if (provider.state == PomodoroState.idle)
           ElevatedButton.icon(
-            onPressed: provider.startWork,
+            onPressed: () => unawaited(provider.startWork()),
             icon: const Icon(Icons.play_arrow),
             label: const Text('开始工作'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
           )
-        else if (provider.state == PomodoroState.working)
+        else if (provider.isRunning)
           ElevatedButton.icon(
-            onPressed: provider.pause,
+            onPressed: () => unawaited(provider.pause()),
             icon: const Icon(Icons.pause),
             label: const Text('暂停'),
             style: ElevatedButton.styleFrom(
@@ -212,7 +214,7 @@ class PomodoroScreen extends StatelessWidget {
           )
         else
           ElevatedButton.icon(
-            onPressed: provider.resume,
+            onPressed: () => unawaited(provider.resume()),
             icon: const Icon(Icons.play_arrow),
             label: const Text('继续'),
             style: ElevatedButton.styleFrom(
@@ -224,7 +226,7 @@ class PomodoroScreen extends StatelessWidget {
 
         // 跳过按钮
         IconButton.filled(
-          onPressed: provider.skip,
+          onPressed: () => unawaited(provider.skip()),
           icon: const Icon(Icons.skip_next),
           style: IconButton.styleFrom(
             backgroundColor: Colors.grey[300],

@@ -79,11 +79,31 @@ class _FakeNotificationService implements NotificationService {
   Future<void> cancelDailySummary() async {}
 
   @override
+  Future<void> cancelPomodoroNotifications() async {}
+
+  @override
   Future<void> scheduleDailySummary(
     TimeOfDay time,
     int pendingCount, {
     List<String>? taskTitles,
   }) async {}
+
+  @override
+  Future<void> schedulePomodoroCompletion({
+    required String phaseLabel,
+    required DateTime endAt,
+    required bool exactPreferred,
+  }) async {}
+
+  @override
+  Future<void> startPomodoroForegroundService({
+    required String phaseLabel,
+    required DateTime endAt,
+    required int remainingSeconds,
+  }) async {}
+
+  @override
+  Future<void> stopPomodoroForegroundService() async {}
 
   @override
   Future<void> updateDailySummary(

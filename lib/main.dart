@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/task_provider.dart';
@@ -31,7 +33,13 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => TaskGroupProvider()..initialize(),
         ),
-        ChangeNotifierProvider(create: (_) => PomodoroProvider()),
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = PomodoroProvider();
+            unawaited(provider.initialize());
+            return provider;
+          },
+        ),
         ChangeNotifierProvider(create: (_) => TagProvider()),
         ChangeNotifierProvider(create: (_) => PriorityProvider()),
         ChangeNotifierProvider(create: (_) => AiModeProvider()),

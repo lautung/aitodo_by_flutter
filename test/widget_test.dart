@@ -67,6 +67,12 @@ void main() {
     expect(find.text('工作中'), findsOneWidget);
     expect(exception, isNull);
 
+    await tester.tap(find.text('暂停'));
+    await tester.pump();
+
+    expect(find.text('继续'), findsOneWidget);
+    expect(find.text('暂停'), findsNothing);
+
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

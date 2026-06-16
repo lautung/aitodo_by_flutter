@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'dart:math' as math;
+
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../services/notification_service.dart';
 
 enum PomodoroState { idle, working, shortBreak, longBreak }
 
@@ -30,13 +34,40 @@ class PomodoroRecord {
   );
 }
 
-class PomodoroProvider extends ChangeNotifier {
+class PomodoroProvider extends ChangeNotifier with WidgetsBindingObserver {
   static const String _historyKey = 'pomodoro_history';
+  static const String _sessionKey = 'pomodoro_session';
+
+  PomodoroProvider({
+    NotificationService? notificationService,
+    DateTime Function()? now,
+    bool registerLifecycleObserver = true,
+  }) : _notificationService = notificationService ?? NotificationService(),
+       _now = now ?? DateTime.now,
+       _shouldRegisterLifecycleObserver = registerLifecycleObserver {
+    if (_shouldRegisterLifecycleObserver) {
+      try {
+        WidgetsBinding.instance.addObserver(this);
+        _registeredLifecycleObserver = true;
+      } catch (_) {
+        _registeredLifecycleObserver = false;
+      }
+    }
+  }
+
+  final NotificationService _notificationService;
+  final DateTime Function() _now;
+  final bool _shouldRegisterLifecycleObserver;
+  bool _registeredLifecycleObserver = false;
 
   Timer? _timer;
   PomodoroState _state = PomodoroState.idle;
+  bool _isRunning = false;
   int _completedPomodoros = 0;
   String? _currentTaskId;
+  DateTime? _startedAt;
+  DateTime? _endAt;
+  int? _pausedRemainingSeconds;
   List<PomodoroRecord> _history = []; // 番茄钟历史记录
 
   // 设置
@@ -47,18 +78,105 @@ class PomodoroProvider extends ChangeNotifier {
 
   int remainingSeconds = 25 * 60;
   PomodoroState get state => _state;
+  bool get isRunning => _isRunning;
+  bool get isPaused => _state != PomodoroState.idle && !_isRunning;
   int get completedPomodoros => _completedPomodoros;
   String? get currentTaskId => _currentTaskId;
+  DateTime? get startedAt => _startedAt;
+  DateTime? get endAt => _endAt;
+  int? get pausedRemainingSeconds => _pausedRemainingSeconds;
 
   String get timeDisplay {
-    final minutes = remainingSeconds ~/ 60;
-    final seconds = remainingSeconds % 60;
+    final displaySeconds = _displayRemainingSeconds;
+    final minutes = displaySeconds ~/ 60;
+    final seconds = displaySeconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   double get progress {
     final total = _getTotalSeconds();
-    return 1 - (remainingSeconds / total);
+    if (total <= 0) {
+      return 0;
+    }
+    return 1 - (_displayRemainingSeconds / total);
+  }
+
+  int get _displayRemainingSeconds {
+    if (_isRunning && _endAt != null) {
+      return _secondsUntil(_endAt!);
+    }
+    return remainingSeconds;
+  }
+
+  Future<void> initialize() async {
+    await loadHistory();
+    await restoreSession();
+  }
+
+  Future<void> restoreSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final sessionJson = prefs.getString(_sessionKey);
+    if (sessionJson == null) {
+      return;
+    }
+
+    try {
+      final session = json.decode(sessionJson) as Map<String, dynamic>;
+      _state = _stateFromName(session['state'] as String?);
+      _isRunning = session['isRunning'] == true;
+      _completedPomodoros = session['completedPomodoros'] as int? ?? 0;
+      _currentTaskId = session['currentTaskId'] as String?;
+      _startedAt = _parseDateTime(session['startedAt']);
+      _endAt = _parseDateTime(session['endAt']);
+      _pausedRemainingSeconds = session['pausedRemainingSeconds'] as int?;
+      remainingSeconds =
+          session['remainingSeconds'] as int? ?? _getTotalSeconds();
+
+      if (_state == PomodoroState.idle) {
+        await _clearSession();
+        notifyListeners();
+        return;
+      }
+
+      if (_isRunning && _endAt != null) {
+        remainingSeconds = _secondsUntil(_endAt!);
+        if (remainingSeconds <= 0) {
+          await _handleTimerComplete();
+          return;
+        }
+
+        _startTicker();
+        await _saveSession();
+        await _syncPomodoroBackgroundWork();
+      } else {
+        _isRunning = false;
+        _timer?.cancel();
+        _timer = null;
+        _endAt = null;
+        _startedAt = null;
+        remainingSeconds =
+            _pausedRemainingSeconds ??
+            remainingSeconds.clamp(0, _getTotalSeconds());
+        await _saveSession();
+      }
+
+      notifyListeners();
+    } catch (error) {
+      debugPrint('Failed to restore pomodoro session: $error');
+      await _clearSession();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(restoreSession());
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      _refreshRemainingFromEndAt();
+      unawaited(_saveSession());
+    }
   }
 
   int _getTotalSeconds() {
@@ -74,90 +192,256 @@ class PomodoroProvider extends ChangeNotifier {
     }
   }
 
-  void startWork({String? taskId}) {
+  Future<void> startWork({String? taskId}) {
     _currentTaskId = taskId;
-    _state = PomodoroState.working;
-    remainingSeconds = workDuration;
-    _startTimer();
-    notifyListeners();
+    return _startPhase(PomodoroState.working, workDuration);
   }
 
-  void startShortBreak() {
-    _state = PomodoroState.shortBreak;
-    remainingSeconds = shortBreakDuration;
-    _startTimer();
-    notifyListeners();
+  Future<void> startShortBreak() {
+    return _startPhase(PomodoroState.shortBreak, shortBreakDuration);
   }
 
-  void startLongBreak() {
-    _state = PomodoroState.longBreak;
-    remainingSeconds = longBreakDuration;
-    _startTimer();
-    notifyListeners();
+  Future<void> startLongBreak() {
+    return _startPhase(PomodoroState.longBreak, longBreakDuration);
   }
 
-  void pause() {
+  Future<void> pause() async {
+    if (_state == PomodoroState.idle || !_isRunning) {
+      return;
+    }
+
+    _refreshRemainingFromEndAt();
+    if (remainingSeconds <= 0) {
+      await _handleTimerComplete();
+      return;
+    }
+
     _timer?.cancel();
+    _timer = null;
+    _isRunning = false;
+    _pausedRemainingSeconds = remainingSeconds;
+    _startedAt = null;
+    _endAt = null;
+    await _cancelPomodoroBackgroundWork();
+    await _saveSession();
     notifyListeners();
   }
 
-  void resume() {
-    _startTimer();
-    notifyListeners();
+  Future<void> resume() async {
+    if (_state == PomodoroState.idle || _isRunning) {
+      return;
+    }
+
+    final resumeSeconds = _pausedRemainingSeconds ?? remainingSeconds;
+    if (resumeSeconds <= 0) {
+      await _handleTimerComplete();
+      return;
+    }
+
+    remainingSeconds = resumeSeconds;
+    await _startPhase(_state, resumeSeconds);
   }
 
-  void reset() {
+  Future<void> reset() async {
     _timer?.cancel();
+    _timer = null;
+    _isRunning = false;
     _state = PomodoroState.idle;
     remainingSeconds = workDuration;
     _currentTaskId = null;
+    _startedAt = null;
+    _endAt = null;
+    _pausedRemainingSeconds = null;
+    await _cancelPomodoroBackgroundWork();
+    await _clearSession();
     notifyListeners();
   }
 
-  void skip() {
+  Future<void> skip() async {
     _timer?.cancel();
-    _onTimerComplete();
+    _timer = null;
+    _isRunning = false;
+    _startedAt = null;
+    _endAt = null;
+    _pausedRemainingSeconds = null;
+    await _handleTimerComplete();
   }
 
-  void _startTimer() {
+  Future<void> _startPhase(PomodoroState nextState, int durationSeconds) async {
+    final now = _now();
+    _timer?.cancel();
+    _state = nextState;
+    _isRunning = true;
+    _startedAt = now;
+    _endAt = now.add(Duration(seconds: durationSeconds));
+    _pausedRemainingSeconds = null;
+    remainingSeconds = durationSeconds;
+    _startTicker();
+    await _saveSession();
+    await _syncPomodoroBackgroundWork();
+    notifyListeners();
+  }
+
+  void _startTicker() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (remainingSeconds > 0) {
-        remainingSeconds--;
-        notifyListeners();
+      if (!_isRunning) {
+        return;
+      }
+
+      _refreshRemainingFromEndAt();
+      if (remainingSeconds <= 0) {
+        unawaited(_handleTimerComplete());
       } else {
-        _timer?.cancel();
-        _onTimerComplete();
+        notifyListeners();
       }
     });
   }
 
-  void _onTimerComplete() {
-    if (_state == PomodoroState.working) {
-      _completedPomodoros++;
-      // 添加番茄钟记录
-      _addRecord(taskId: _currentTaskId, duration: workDuration);
+  void _refreshRemainingFromEndAt() {
+    if (_isRunning && _endAt != null) {
+      remainingSeconds = _secondsUntil(_endAt!);
     }
-    notifyListeners();
+  }
 
-    // 自动切换状态
-    if (_state == PomodoroState.working) {
+  int _secondsUntil(DateTime endAt) {
+    return math.max(0, endAt.difference(_now()).inSeconds);
+  }
+
+  Future<void> _handleTimerComplete() async {
+    if (_state == PomodoroState.idle) {
+      return;
+    }
+
+    final completedState = _state;
+    _timer?.cancel();
+    _timer = null;
+    _isRunning = false;
+    _startedAt = null;
+    _endAt = null;
+    _pausedRemainingSeconds = null;
+    remainingSeconds = 0;
+    await _cancelPomodoroBackgroundWork();
+
+    if (completedState == PomodoroState.working) {
+      _completedPomodoros++;
+      _addRecord(taskId: _currentTaskId, duration: workDuration);
+
       if (_completedPomodoros % pomodorosUntilLongBreak == 0) {
-        startLongBreak();
+        await startLongBreak();
       } else {
-        startShortBreak();
+        await startShortBreak();
       }
     } else {
-      // 休息结束后回到空闲
       _state = PomodoroState.idle;
       remainingSeconds = workDuration;
+      await _clearSession();
       notifyListeners();
     }
+  }
+
+  Future<void> _syncPomodoroBackgroundWork() async {
+    if (!_isRunning || _endAt == null || _state == PomodoroState.idle) {
+      return;
+    }
+
+    final phaseLabel = _labelForState(_state);
+    try {
+      await _notificationService.schedulePomodoroCompletion(
+        phaseLabel: phaseLabel,
+        endAt: _endAt!,
+        exactPreferred: true,
+      );
+    } catch (error) {
+      debugPrint('Failed to schedule pomodoro completion notification: $error');
+    }
+
+    try {
+      await _notificationService.startPomodoroForegroundService(
+        phaseLabel: phaseLabel,
+        endAt: _endAt!,
+        remainingSeconds: _displayRemainingSeconds,
+      );
+    } catch (error) {
+      debugPrint('Failed to start pomodoro foreground service: $error');
+    }
+  }
+
+  Future<void> _cancelPomodoroBackgroundWork() async {
+    try {
+      await _notificationService.cancelPomodoroNotifications();
+    } catch (error) {
+      debugPrint('Failed to cancel pomodoro notification: $error');
+    }
+
+    try {
+      await _notificationService.stopPomodoroForegroundService();
+    } catch (error) {
+      debugPrint('Failed to stop pomodoro foreground service: $error');
+    }
+  }
+
+  String _labelForState(PomodoroState state) {
+    switch (state) {
+      case PomodoroState.idle:
+        return '准备开始';
+      case PomodoroState.working:
+        return '工作';
+      case PomodoroState.shortBreak:
+        return '短休息';
+      case PomodoroState.longBreak:
+        return '长休息';
+    }
+  }
+
+  PomodoroState _stateFromName(String? name) {
+    return PomodoroState.values.firstWhere(
+      (state) => state.name == name,
+      orElse: () => PomodoroState.idle,
+    );
+  }
+
+  DateTime? _parseDateTime(Object? value) {
+    if (value is! String) {
+      return null;
+    }
+    return DateTime.tryParse(value);
+  }
+
+  Future<void> _saveSession() async {
+    if (_state == PomodoroState.idle && !_isRunning) {
+      await _clearSession();
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _sessionKey,
+      json.encode({
+        'state': _state.name,
+        'isRunning': _isRunning,
+        'completedPomodoros': _completedPomodoros,
+        'currentTaskId': _currentTaskId,
+        'startedAt': _startedAt?.toIso8601String(),
+        'endAt': _endAt?.toIso8601String(),
+        'pausedRemainingSeconds': _pausedRemainingSeconds,
+        'remainingSeconds': _displayRemainingSeconds,
+      }),
+    );
+  }
+
+  Future<void> _clearSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sessionKey);
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _timer = null;
+    if (_registeredLifecycleObserver) {
+      WidgetsBinding.instance.removeObserver(this);
+    }
     super.dispose();
   }
 
@@ -296,13 +580,9 @@ class PomodoroProvider extends ChangeNotifier {
   /// 添加番茄钟记录
   void _addRecord({String? taskId, required int duration}) {
     _history.add(
-      PomodoroRecord(
-        timestamp: DateTime.now(),
-        taskId: taskId,
-        duration: duration,
-      ),
+      PomodoroRecord(timestamp: _now(), taskId: taskId, duration: duration),
     );
-    _saveHistory();
+    unawaited(_saveHistory());
   }
 
   /// 清除历史记录
@@ -314,13 +594,20 @@ class PomodoroProvider extends ChangeNotifier {
 
   Future<void> resetAllData() async {
     _timer?.cancel();
+    _timer = null;
+    _isRunning = false;
     _state = PomodoroState.idle;
     _completedPomodoros = 0;
     _currentTaskId = null;
+    _startedAt = null;
+    _endAt = null;
+    _pausedRemainingSeconds = null;
     _history.clear();
     remainingSeconds = workDuration;
+    await _cancelPomodoroBackgroundWork();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_historyKey);
+    await prefs.remove(_sessionKey);
     notifyListeners();
   }
 }

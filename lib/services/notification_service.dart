@@ -1,15 +1,20 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
+
 import '../models/task.dart' as task_model;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
+
+  static const int pomodoroForegroundNotificationId = 900001;
+  static const int pomodoroCompletionNotificationId = 900002;
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
@@ -24,7 +29,16 @@ class NotificationService {
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
-    const initSettings = InitializationSettings(android: androidSettings);
+    const darwinSettings = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: darwinSettings,
+      macOS: darwinSettings,
+    );
 
     await _notifications.initialize(
       initSettings,
@@ -37,15 +51,41 @@ class NotificationService {
   Future<bool> requestNotificationPermission() async {
     await initialize();
 
-    if (!Platform.isAndroid) {
-      return true;
+    if (Platform.isAndroid) {
+      final androidPlugin = _notifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      return await androidPlugin?.requestNotificationsPermission() ?? true;
     }
 
-    final androidPlugin = _notifications
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    return await androidPlugin?.requestNotificationsPermission() ?? true;
+    if (Platform.isIOS) {
+      final iosPlugin = _notifications
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      return await iosPlugin?.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          ) ??
+          true;
+    }
+
+    if (Platform.isMacOS) {
+      final macPlugin = _notifications
+          .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin
+          >();
+      return await macPlugin?.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          ) ??
+          true;
+    }
+
+    return true;
   }
 
   void _onNotificationTapped(NotificationResponse response) {
@@ -58,12 +98,10 @@ class NotificationService {
 
     await initialize();
 
-    // 使用自定义提醒时间（如果已设置），否则回退到截止前15分钟
     final DateTime reminderTime;
     final String reminderText;
     if (task.reminderTime != null) {
       reminderTime = task.reminderTime!;
-      // 计算自定义提醒时间与截止时间的差值
       final diff = task.dueDate!.difference(reminderTime);
       if (diff.inMinutes > 0) {
         reminderText = '距离截止还有 ${_formatDuration(diff)}';
@@ -77,13 +115,11 @@ class NotificationService {
       reminderText = '${task.title} 将在15分钟后到期';
     }
 
-    // 如果提醒时间已经过去，不调度
     if (reminderTime.isBefore(DateTime.now())) return;
 
     final tzTime = tz.TZDateTime.from(reminderTime, tz.local);
     final notificationId = _notificationIdForTask(task.id);
 
-    // 先取消同任务旧提醒，避免重复通知。
     await _notifications.cancel(notificationId);
 
     await _notifications.zonedSchedule(
@@ -100,11 +136,181 @@ class NotificationService {
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
         ),
+        iOS: DarwinNotificationDetails(threadIdentifier: 'task_reminders'),
+        macOS: DarwinNotificationDetails(threadIdentifier: 'task_reminders'),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
+  }
+
+  Future<void> schedulePomodoroCompletion({
+    required String phaseLabel,
+    required DateTime endAt,
+    required bool exactPreferred,
+  }) async {
+    if (endAt.isBefore(DateTime.now())) {
+      return;
+    }
+
+    if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) {
+      return;
+    }
+
+    await initialize();
+    await _notifications.cancel(pomodoroCompletionNotificationId);
+
+    final scheduleMode = await _resolvePomodoroScheduleMode(exactPreferred);
+    try {
+      await _schedulePomodoroCompletionWithMode(
+        phaseLabel: phaseLabel,
+        endAt: endAt,
+        scheduleMode: scheduleMode,
+      );
+    } on PlatformException {
+      if (scheduleMode == AndroidScheduleMode.exactAllowWhileIdle ||
+          scheduleMode == AndroidScheduleMode.exact ||
+          scheduleMode == AndroidScheduleMode.alarmClock) {
+        await _schedulePomodoroCompletionWithMode(
+          phaseLabel: phaseLabel,
+          endAt: endAt,
+          scheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      } else {
+        rethrow;
+      }
+    }
+  }
+
+  Future<void> _schedulePomodoroCompletionWithMode({
+    required String phaseLabel,
+    required DateTime endAt,
+    required AndroidScheduleMode scheduleMode,
+  }) async {
+    final tzTime = tz.TZDateTime.from(endAt, tz.local);
+    await _notifications.zonedSchedule(
+      pomodoroCompletionNotificationId,
+      '$phaseLabel结束',
+      phaseLabel == '工作' ? '该休息一下了' : '休息结束，准备开始下一轮',
+      tzTime,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'pomodoro_complete',
+          '番茄钟结束提醒',
+          channelDescription: '番茄钟阶段结束时提醒',
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(threadIdentifier: 'pomodoro'),
+        macOS: DarwinNotificationDetails(threadIdentifier: 'pomodoro'),
+      ),
+      androidScheduleMode: scheduleMode,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: 'pomodoro_complete',
+    );
+  }
+
+  Future<AndroidScheduleMode> _resolvePomodoroScheduleMode(
+    bool exactPreferred,
+  ) async {
+    if (!Platform.isAndroid || !exactPreferred) {
+      return AndroidScheduleMode.inexactAllowWhileIdle;
+    }
+
+    final androidPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (androidPlugin == null) {
+      return AndroidScheduleMode.inexactAllowWhileIdle;
+    }
+
+    try {
+      var canScheduleExact =
+          await androidPlugin.canScheduleExactNotifications() ?? false;
+      if (!canScheduleExact) {
+        canScheduleExact =
+            await androidPlugin.requestExactAlarmsPermission() ?? false;
+      }
+
+      return canScheduleExact
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle;
+    } on PlatformException {
+      return AndroidScheduleMode.inexactAllowWhileIdle;
+    }
+  }
+
+  Future<void> startPomodoroForegroundService({
+    required String phaseLabel,
+    required DateTime endAt,
+    required int remainingSeconds,
+  }) async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+
+    await initialize();
+    final androidPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (androidPlugin == null) {
+      return;
+    }
+
+    await androidPlugin.startForegroundService(
+      pomodoroForegroundNotificationId,
+      '番茄钟正在运行',
+      '$phaseLabel · 剩余 ${_formatDuration(Duration(seconds: remainingSeconds))}',
+      notificationDetails: AndroidNotificationDetails(
+        'pomodoro_foreground',
+        '番茄钟运行中',
+        channelDescription: '番茄钟后台运行常驻通知',
+        importance: Importance.low,
+        priority: Priority.low,
+        icon: '@mipmap/ic_launcher',
+        ongoing: true,
+        autoCancel: false,
+        silent: true,
+        onlyAlertOnce: true,
+        showWhen: true,
+        when: endAt.millisecondsSinceEpoch,
+        usesChronometer: true,
+        chronometerCountDown: true,
+      ),
+      payload: 'pomodoro_foreground',
+      foregroundServiceTypes: const {
+        AndroidServiceForegroundType.foregroundServiceTypeSpecialUse,
+      },
+    );
+  }
+
+  Future<void> stopPomodoroForegroundService() async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+
+    await initialize();
+    final androidPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    await androidPlugin?.stopForegroundService();
+    await _notifications.cancel(pomodoroForegroundNotificationId);
+  }
+
+  Future<void> cancelPomodoroNotifications() async {
+    if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) {
+      return;
+    }
+
+    await initialize();
+    await _notifications.cancel(pomodoroCompletionNotificationId);
+    await _notifications.cancel(pomodoroForegroundNotificationId);
   }
 
   int _notificationIdForTask(String taskId) {
@@ -152,13 +358,11 @@ class NotificationService {
   }) async {
     await initialize();
 
-    // 取消已存在的每日总结通知
     await _notifications.cancel(_dailySummaryNotificationId);
 
-    // 构建通知内容
     final String body;
     if (taskTitles != null && taskTitles.isNotEmpty) {
-      final taskList = taskTitles.take(5).map((t) => '• $t').join('\n');
+      final taskList = taskTitles.take(5).map((t) => '- $t').join('\n');
       final moreText = taskTitles.length > 5
           ? '\n...还有 ${taskTitles.length - 5} 个任务'
           : '';
@@ -167,7 +371,6 @@ class NotificationService {
       body = '您有 $pendingCount 个待办任务';
     }
 
-    // 计算下一次的提醒时间
     final now = DateTime.now();
     var scheduledDate = DateTime(
       now.year,
@@ -177,7 +380,6 @@ class NotificationService {
       time.minute,
     );
 
-    // 如果时间已过，则安排到明天
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
@@ -186,7 +388,7 @@ class NotificationService {
 
     await _notifications.zonedSchedule(
       _dailySummaryNotificationId,
-      '📋 每日任务总结',
+      '每日任务总结',
       body,
       tzTime,
       const NotificationDetails(
@@ -198,11 +400,13 @@ class NotificationService {
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
         ),
+        iOS: DarwinNotificationDetails(threadIdentifier: 'daily_summary'),
+        macOS: DarwinNotificationDetails(threadIdentifier: 'daily_summary'),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time, // 每天重复
+      matchDateTimeComponents: DateTimeComponents.time,
     );
   }
 
@@ -219,16 +423,12 @@ class NotificationService {
   }) async {
     await initialize();
 
-    // 检查是否已有每日总结通知安排
-    // 如果有，我们需要重新安排以更新内容
-    // 这里我们直接重新调度
     final pending = await _notifications.pendingNotificationRequests();
     final hasDailySummary = pending.any(
       (p) => p.id == _dailySummaryNotificationId,
     );
 
     if (hasDailySummary) {
-      // 取消旧的，重新安排
       await _notifications.cancel(_dailySummaryNotificationId);
     }
   }
