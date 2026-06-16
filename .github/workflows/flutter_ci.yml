@@ -33,6 +33,10 @@ jobs:
       - name: Test
         run: flutter test
 
+      - name: Install Android NDK
+        run: |
+          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "ndk;29.0.13113456"
+
       - name: Build debug APK
         run: flutter build apk --debug
-
