@@ -7,6 +7,7 @@ import '../models/task_enums.dart';
 import '../providers/task_provider.dart';
 import '../services/ai_service.dart';
 import '../widgets/heatmap_calendar.dart';
+import '../widgets/ui/ui.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -20,54 +21,43 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget build(BuildContext context) {
     return Consumer<TaskProvider>(
       builder: (context, provider, child) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('统计'),
-            centerTitle: true,
-            elevation: 0,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Colors.white,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.auto_awesome),
-                tooltip: 'AI摘要',
-                onPressed: provider.totalTasks > 0
-                    ? () => _showAISummary(context, provider)
-                    : null,
-              ),
-            ],
-          ),
-          body: Column(
+        return AppPageScaffold(
+          title: '统计',
+          subtitle:
+              '${provider.filteredCompletedTasks}/${provider.filteredTotalTasks} 已完成',
+          leadingIcon: Icons.bar_chart_outlined,
+          actions: [
+            IconButton.filledTonal(
+              icon: const Icon(Icons.auto_awesome),
+              tooltip: 'AI摘要',
+              onPressed: provider.totalTasks > 0
+                  ? () => _showAISummary(context, provider)
+                  : null,
+            ),
+          ],
+          child: Column(
             children: [
-              // Time filter chips
               _buildTimeFilterChips(context, provider),
-              // Statistics content
+              const SizedBox(height: AppSpacing.md),
               Expanded(
                 child: provider.filteredTotalTasks == 0
                     ? _buildEmptyState()
                     : SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Custom date range display
                             if (provider.statsTimeFilter ==
                                     StatsTimeFilter.custom &&
                                 provider.customStatsDateRange.$1 != null)
                               _buildCustomDateRangeDisplay(context, provider),
-                            // Overview cards
                             _buildOverviewCards(context, provider),
-                            const SizedBox(height: 24),
-                            // Completion rate
+                            const SizedBox(height: AppSpacing.md),
                             _buildCompletionRateCard(context, provider),
-                            const SizedBox(height: 24),
-                            // Category chart
+                            const SizedBox(height: AppSpacing.md),
                             _buildCategoryChart(context, provider),
-                            const SizedBox(height: 24),
-                            // Weekly trend
+                            const SizedBox(height: AppSpacing.md),
                             _buildWeeklyTrendChart(context, provider),
-                            const SizedBox(height: 24),
-                            // Heatmap
+                            const SizedBox(height: AppSpacing.md),
                             _buildHeatmapCard(context, provider),
                           ],
                         ),
@@ -81,18 +71,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildTimeFilterChips(BuildContext context, TaskProvider provider) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return SizedBox(
+      height: 40,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -100,25 +80,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             final isSelected = provider.statsTimeFilter == filter;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                label: Text(filter.label),
+              child: AppFilterChip(
+                label: filter.label,
                 selected: isSelected,
-                onSelected: (_) {
+                onTap: () {
                   if (filter == StatsTimeFilter.custom) {
                     _showCustomDatePicker(context, provider);
                   } else {
                     provider.setStatsTimeFilter(filter);
                   }
                 },
-                selectedColor: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.2),
-                labelStyle: TextStyle(
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : Colors.grey[700],
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
               ),
             );
           }).toList(),
@@ -208,20 +179,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.bar_chart, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text('暂无数据', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-          const SizedBox(height: 8),
-          Text(
-            '添加任务后查看统计',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-          ),
-        ],
-      ),
+    return const AppEmptyState(
+      icon: Icons.bar_chart_outlined,
+      title: '暂无数据',
+      message: '添加任务后，这里会显示完成率、分类和趋势。',
     );
   }
 
@@ -262,73 +223,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildOverviewCards(BuildContext context, TaskProvider provider) {
-    return Row(
+    return AppMetricGrid(
       children: [
-        Expanded(
-          child: _buildStatCard(
-            context,
-            '总任务',
-            provider.filteredTotalTasks.toString(),
-            Icons.list_alt,
-            Colors.blue,
-          ),
+        AppMetricCard(
+          label: '总任务',
+          value: provider.filteredTotalTasks.toString(),
+          icon: Icons.list_alt,
+          color: Colors.blue,
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            context,
-            '已完成',
-            provider.filteredCompletedTasks.toString(),
-            Icons.check_circle,
-            Colors.green,
-          ),
+        AppMetricCard(
+          label: '已完成',
+          value: provider.filteredCompletedTasks.toString(),
+          icon: Icons.check_circle_outline,
+          color: Colors.green,
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            context,
-            '进行中',
-            provider.filteredActiveTasks.toString(),
-            Icons.pending_actions,
-            Colors.orange,
-          ),
+        AppMetricCard(
+          label: '进行中',
+          value: provider.filteredActiveTasks.toString(),
+          icon: Icons.pending_actions,
+          color: Colors.orange,
         ),
       ],
-    );
-  }
-
-  Widget _buildStatCard(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -336,11 +251,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final rate = provider.filteredCompletionRate;
     final percentage = (rate * 100).toStringAsFixed(1);
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return AppSurface(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -414,11 +327,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget _buildCategoryChart(BuildContext context, TaskProvider provider) {
     final tasksByCategory = provider.filteredTasksByCategory;
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return AppSurface(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -507,11 +418,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       return dateFormat.format(date);
     });
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return AppSurface(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -634,11 +543,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final now = DateTime.now();
     final monthlyData = provider.getTasksByMonth(now.year, now.month);
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return AppSurface(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -685,134 +592,39 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   ) {
     final tasks = provider.getTasksCompletedOn(date);
 
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        minChildSize: 0.3,
-        maxChildSize: 0.8,
-        expand: false,
-        builder: (context, scrollController) => Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.check_circle,
-                      color: Colors.green.shade700,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          DateFormat('yyyy-MM-dd').format(date),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          '${tasks.length} 个任务已完成',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
+      title: DateFormat('yyyy-MM-dd').format(date),
+      subtitle: '${tasks.length} 个任务已完成',
+      child: tasks.isEmpty
+          ? const AppEmptyState(
+              icon: Icons.inbox_outlined,
+              title: '暂无完成的任务',
+              message: '当天完成的任务会在这里显示。',
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.lg,
               ),
-              const SizedBox(height: 16),
-              const Divider(),
-              Expanded(
-                child: tasks.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.inbox_outlined,
-                              size: 48,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '暂无完成的任务',
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: scrollController,
-                        itemCount: tasks.length,
-                        itemBuilder: (context, index) {
-                          final task = tasks[index];
-                          return ListTile(
-                            leading: Icon(
-                              Icons.check_circle,
-                              color: task.category.color,
-                            ),
-                            title: Text(
-                              task.title,
-                              style: const TextStyle(
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                            ),
-                            subtitle: task.description != null
-                                ? Text(
-                                    task.description!,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  )
-                                : null,
-                            trailing: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: task.category.color.withValues(
-                                  alpha: 0.1,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                task.category.label,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: task.category.color,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
+              itemCount: tasks.length,
+              separatorBuilder: (context, index) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final task = tasks[index];
+                return AppListItem(
+                  icon: Icons.check_circle_outline,
+                  iconColor: task.category.color,
+                  title: task.title,
+                  subtitle: task.description,
+                  trailing: AppInfoPill(
+                    label: task.category.label,
+                    color: task.category.color,
+                  ),
+                );
+              },
+            ),
     );
   }
 
@@ -834,91 +646,41 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       tasksByCategory: provider.filteredTasksByCategory,
     );
 
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => Container(
-          padding: const EdgeInsets.all(20),
-          child: ListView(
-            controller: scrollController,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.auto_awesome,
-                      color: Colors.blue.shade700,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'AI任务摘要',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              // Summary content
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  summary,
-                  style: const TextStyle(fontSize: 14, height: 1.6),
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Suggestions
-              const Text(
-                '💡 改进建议',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              ...suggestions.map(
-                (suggestion) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('• ', style: TextStyle(fontSize: 14)),
-                      Expanded(
-                        child: Text(
-                          suggestion,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+      title: 'AI任务摘要',
+      subtitle: '基于当前筛选范围生成',
+      initialChildSize: 0.64,
+      minChildSize: 0.42,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          0,
+          AppSpacing.lg,
+          AppSpacing.lg,
         ),
+        children: [
+          AppSurface(
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+            child: Text(
+              summary,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(height: 1.6),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          const AppSectionHeader(title: '改进建议', accentColor: Colors.amber),
+          ...suggestions.map(
+            (suggestion) => AppListItem(
+              icon: Icons.lightbulb_outline,
+              iconColor: Colors.amber,
+              title: suggestion,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -12,6 +12,7 @@ import '../providers/pomodoro_provider.dart';
 import '../services/notification_service.dart';
 import '../services/local_data_service.dart';
 import '../services/chat_storage_service.dart';
+import '../widgets/ui/ui.dart';
 import 'legal_document_screen.dart';
 import 'recycle_bin_screen.dart';
 
@@ -20,15 +21,11 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('设置'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: Consumer<ThemeProvider>(
+    return AppPageScaffold(
+      title: '设置',
+      subtitle: '外观、通知、数据和本地偏好',
+      leadingIcon: Icons.tune_outlined,
+      child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           final aiModeProvider = context.watch<AiModeProvider>();
 
@@ -37,10 +34,10 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               // 主题设置
               _buildSectionHeader('外观'),
-              Card(
+              AppSurface(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.zero,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -107,8 +104,9 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               // 通知设置
               _buildSectionHeader('通知'),
-              Card(
+              AppSurface(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: EdgeInsets.zero,
                 child: Consumer<NotificationSettingsProvider>(
                   builder: (context, settingsProvider, child) {
                     return Column(
@@ -195,10 +193,10 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               // AI 设置
               _buildSectionHeader('AI设置'),
-              Card(
+              AppSurface(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.zero,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -236,8 +234,9 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               // 合规与说明
               _buildSectionHeader('合规与说明'),
-              Card(
+              AppSurface(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: EdgeInsets.zero,
                 child: Column(
                   children: [
                     _buildLegalTile(
@@ -270,8 +269,9 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               // 数据管理
               _buildSectionHeader('数据管理'),
-              Card(
+              AppSurface(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: EdgeInsets.zero,
                 child: Column(
                   children: [
                     ListTile(
@@ -339,8 +339,9 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               // 标签管理
               _buildSectionHeader('标签管理'),
-              Card(
+              AppSurface(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: EdgeInsets.zero,
                 child: Consumer<TagProvider>(
                   builder: (context, tagProvider, child) {
                     final List<Widget> tagItems = tagProvider.tags
@@ -381,8 +382,9 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               // 优先级管理
               _buildSectionHeader('优先级管理'),
-              Card(
+              AppSurface(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: EdgeInsets.zero,
                 child: Consumer<PriorityProvider>(
                   builder: (context, priorityProvider, child) {
                     final customPriorities = priorityProvider.customPriorities;
@@ -444,8 +446,9 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               // 关于
               _buildSectionHeader('关于'),
-              Card(
+              AppSurface(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: EdgeInsets.zero,
                 child: Column(
                   children: [
                     ListTile(
@@ -504,22 +507,12 @@ class SettingsScreen extends StatelessWidget {
   Future<bool> _explainAndRequestNotificationPermission(
     BuildContext context,
   ) async {
-    final shouldRequest = await showDialog<bool>(
+    final shouldRequest = await showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('开启通知'),
-        content: const Text('AiTODO 需要通知权限来发送任务提醒和每日总结。拒绝权限不影响管理任务，但不会收到系统推送。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('暂不开启'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('继续'),
-          ),
-        ],
-      ),
+      title: '开启通知',
+      message: 'AiTODO 需要通知权限来发送任务提醒和每日总结。拒绝权限不影响管理任务，但不会收到系统推送。',
+      cancelLabel: '暂不开启',
+      confirmLabel: '继续',
     );
 
     if (shouldRequest != true) {
@@ -622,23 +615,12 @@ class SettingsScreen extends StatelessWidget {
     final pomodoroProvider = context.read<PomodoroProvider>();
     final messenger = ScaffoldMessenger.of(context);
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('清除本地数据'),
-        content: const Text('此操作会清空任务、回收站、标签、聊天记录、番茄钟历史和本地偏好设置。导出的备份文件不受影响。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('清除'),
-          ),
-        ],
-      ),
+      title: '清除本地数据',
+      message: '此操作会清空任务、回收站、标签、聊天记录、番茄钟历史和本地偏好设置。导出的备份文件不受影响。',
+      confirmLabel: '清除',
+      destructive: true,
     );
 
     if (confirmed != true) return;
@@ -741,27 +723,15 @@ class SettingsScreen extends StatelessWidget {
     String tagId,
     String tagName,
   ) {
-    showDialog(
+    showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('删除标签'),
-        content: Text('确定要删除标签 "$tagName" 吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              provider.deleteTag(tagId);
-              Navigator.pop(dialogContext);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
-    );
+      title: '删除标签',
+      message: '确定要删除标签 "$tagName" 吗？',
+      confirmLabel: '删除',
+      destructive: true,
+    ).then((confirmed) {
+      if (confirmed == true) provider.deleteTag(tagId);
+    });
   }
 
   void _showAddPriorityDialog(BuildContext context) {
@@ -864,26 +834,14 @@ class SettingsScreen extends StatelessWidget {
     String priorityId,
     String priorityName,
   ) {
-    showDialog(
+    showAppConfirmDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('删除优先级'),
-        content: Text('确定要删除优先级 "$priorityName" 吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              provider.deletePriority(priorityId);
-              Navigator.pop(dialogContext);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('删除'),
-          ),
-        ],
-      ),
-    );
+      title: '删除优先级',
+      message: '确定要删除优先级 "$priorityName" 吗？',
+      confirmLabel: '删除',
+      destructive: true,
+    ).then((confirmed) {
+      if (confirmed == true) provider.deletePriority(priorityId);
+    });
   }
 }

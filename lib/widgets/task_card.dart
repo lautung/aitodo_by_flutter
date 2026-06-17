@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import '../models/task.dart';
 import '../providers/tag_provider.dart';
+import 'ui/ui.dart';
 
 enum _TaskCardAction { delete }
 
@@ -28,107 +30,105 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('MM/dd');
+    final colorScheme = Theme.of(context).colorScheme;
+    final titleColor = task.isCompleted
+        ? colorScheme.onSurfaceVariant
+        : colorScheme.onSurface;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border(
-            left: BorderSide(color: task.priority.color, width: 4),
-          ),
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: isMultiSelectMode
+                  ? Checkbox(
+                      value: isSelected,
+                      onChanged: (_) => onSelect?.call(),
+                      visualDensity: VisualDensity.compact,
+                    )
+                  : Checkbox(
+                      value: task.isCompleted,
+                      onChanged: (_) => onToggle(),
+                      activeColor: task.priority.color,
+                      visualDensity: VisualDensity.compact,
+                    ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (isMultiSelectMode)
-                        Checkbox(
-                          value: isSelected,
-                          onChanged: (_) => onSelect?.call(),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        )
-                      else
-                        Transform.scale(
-                          scale: 1.2,
-                          child: Checkbox(
-                            value: task.isCompleted,
-                            onChanged: (_) => onToggle(),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            activeColor: task.priority.color,
-                          ),
+                      Expanded(
+                        child: Text(
+                          task.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: titleColor,
+                                fontWeight: FontWeight.w700,
+                                decoration: task.isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
                         ),
-                      const SizedBox(width: 8),
-                      Expanded(child: _buildTaskContent(context, dateFormat)),
+                      ),
+                      if (task.dueDate != null) ...[
+                        const SizedBox(width: AppSpacing.sm),
+                        _DueDateLabel(task: task),
+                      ],
                     ],
                   ),
-                ),
+                  if (task.description != null &&
+                      task.description!.trim().isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      task.description!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        decoration: task.isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.sm),
+                  _TaskMetaRow(task: task),
+                  if (task.subtasks.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    _SubtaskProgress(task: task),
+                  ],
+                ],
               ),
             ),
-            if (!isMultiSelectMode)
-              Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: _buildActionsMenu(),
-              ),
+            if (!isMultiSelectMode) ...[
+              const SizedBox(width: AppSpacing.xs),
+              _buildActionsMenu(context),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTaskContent(BuildContext context, DateFormat dateFormat) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          task.title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-            color: task.isCompleted ? Colors.grey : Colors.black87,
-          ),
-        ),
-        if (task.description != null && task.description!.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            task.description!,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[600],
-              decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-            ),
-          ),
-        ],
-        const SizedBox(height: 8),
-        _buildTagsRow(context, dateFormat),
-        if (task.subtasks.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          _buildSubtaskProgress(),
-        ],
-      ],
-    );
-  }
+  Widget _buildActionsMenu(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
 
-  Widget _buildActionsMenu() {
     return PopupMenuButton<_TaskCardAction>(
       tooltip: '更多操作',
-      icon: const Icon(Icons.more_vert),
+      icon: Icon(Icons.more_vert, color: colorScheme.onSurfaceVariant),
       onSelected: (action) {
         switch (action) {
           case _TaskCardAction.delete:
@@ -141,9 +141,9 @@ class TaskCard extends StatelessWidget {
             value: _TaskCardAction.delete,
             child: Row(
               children: [
-                Icon(Icons.delete_outline, color: Colors.red[600], size: 20),
-                const SizedBox(width: 12),
-                Text('删除', style: TextStyle(color: Colors.red[600])),
+                Icon(Icons.delete_outline, color: colorScheme.error, size: 20),
+                const SizedBox(width: AppSpacing.md),
+                Text('删除', style: TextStyle(color: colorScheme.error)),
               ],
             ),
           ),
@@ -151,167 +151,116 @@ class TaskCard extends StatelessWidget {
       },
     );
   }
+}
 
-  bool _isDueOverdue(DateTime dueDate) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
-    return due.isBefore(today) && !task.isCompleted;
+class _TaskMetaRow extends StatelessWidget {
+  final Task task;
+
+  const _TaskMetaRow({required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<TagProvider>(
+      builder: (context, tagProvider, child) {
+        final customTags = task.customTagIds
+            .map(tagProvider.getTagById)
+            .whereType<CustomTag>()
+            .toList();
+
+        return Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.xs,
+          children: [
+            AppInfoPill(
+              label: task.category.label,
+              color: task.category.color,
+              icon: task.category.icon,
+            ),
+            AppInfoPill(
+              label: task.priority.label,
+              color: task.priority.color,
+              icon: Icons.flag,
+              emphasized: task.priority == Priority.high,
+            ),
+            ...customTags.map(
+              (tag) => AppInfoPill(label: tag.name, color: tag.color),
+            ),
+          ],
+        );
+      },
+    );
   }
+}
 
-  Widget _buildSubtaskProgress() {
-    final completed = task.subtasks.where((s) => s.isCompleted).length;
-    final total = task.subtasks.length;
-    final progress = task.subtaskProgress;
+class _DueDateLabel extends StatelessWidget {
+  final Task task;
+
+  const _DueDateLabel({required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dueDate = task.dueDate!;
+    final isOverdue = _isOverdue(dueDate) && !task.isCompleted;
+    final color = isOverdue ? colorScheme.error : colorScheme.onSurfaceVariant;
 
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          Icons.checklist,
-          size: 14,
-          color: progress == 1.0 ? Colors.green : Colors.grey,
-        ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.grey[200],
-              valueColor: AlwaysStoppedAnimation<Color>(
-                progress == 1.0 ? Colors.green : Colors.blue,
-              ),
-              minHeight: 4,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
+        Icon(Icons.schedule, size: 14, color: color),
+        const SizedBox(width: AppSpacing.xs),
         Text(
-          '$completed/$total',
-          style: TextStyle(
-            fontSize: 11,
-            color: progress == 1.0 ? Colors.green : Colors.grey[600],
+          DateFormat('M月d日').format(dueDate),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: color,
+            fontWeight: isOverdue ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildTagsRow(BuildContext context, DateFormat dateFormat) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 4,
-      crossAxisAlignment: WrapCrossAlignment.center,
+  bool _isOverdue(DateTime dueDate) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
+    return due.isBefore(today);
+  }
+}
+
+class _SubtaskProgress extends StatelessWidget {
+  final Task task;
+
+  const _SubtaskProgress({required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final completed = task.subtasks.where((s) => s.isCompleted).length;
+    final total = task.subtasks.length;
+    final progress = task.subtaskProgress;
+    final color = progress == 1 ? Colors.green : colorScheme.primary;
+
+    return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: task.category.color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(task.category.icon, size: 12, color: task.category.color),
-              const SizedBox(width: 4),
-              Text(
-                task.category.label,
-                style: TextStyle(fontSize: 11, color: task.category.color),
-              ),
-            ],
-          ),
+        Text(
+          '子任务 $completed/$total',
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: task.priority.color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.flag, size: 12, color: task.priority.color),
-              const SizedBox(width: 4),
-              Text(
-                task.priority.label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: task.priority.color,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (task.customTagIds.isNotEmpty)
-          Consumer<TagProvider>(
-            builder: (context, tagProvider, child) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: task.customTagIds.map<Widget>((tagId) {
-                  final tag = tagProvider.getTagById(tagId);
-                  if (tag == null) return const SizedBox.shrink();
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: tag.color.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: tag.color.withValues(alpha: 0.5),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        tag.name,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: tag.color,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-        if (task.dueDate != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: _isDueOverdue(task.dueDate!)
-                  ? Colors.red.withValues(alpha: 0.1)
-                  : Colors.grey.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.schedule,
-                  size: 12,
-                  color: _isDueOverdue(task.dueDate!)
-                      ? Colors.red
-                      : Colors.grey,
-                ),
-                const SizedBox(width: 2),
-                Text(
-                  dateFormat.format(task.dueDate!),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: _isDueOverdue(task.dueDate!)
-                        ? Colors.red
-                        : Colors.grey,
-                  ),
-                ),
-              ],
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 5,
+              backgroundColor: colorScheme.surfaceContainerHighest,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),
+        ),
       ],
     );
   }

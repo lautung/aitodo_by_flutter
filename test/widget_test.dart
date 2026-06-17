@@ -22,6 +22,68 @@ void main() {
     expect(find.byType(FloatingActionButton), findsOneWidget);
   });
 
+  testWidgets('Home command input creates a task with local parser', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.enterText(find.byType(TextField).first, '项目周报');
+    await tester.tap(find.byTooltip('智能创建任务'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('tasks'), contains('项目周报'));
+    expect(find.text('项目周报'), findsWidgets);
+  });
+
+  testWidgets('Main redesigned tabs render without exceptions', (tester) async {
+    tester.view
+      ..physicalSize = const Size(390, 844)
+      ..devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const MyApp());
+    await tester.pump(const Duration(milliseconds: 300));
+
+    for (final label in ['日历', '统计', '番茄钟', 'AI助手']) {
+      await tester.tap(find.text(label).first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text(label), findsWidgets);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets('Secondary redesigned pages render from home', (tester) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byTooltip('设置'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('设置'), findsOneWidget);
+    expect(find.text('外观'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byTooltip('返回'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('新建任务'), findsOneWidget);
+    expect(find.text('核心信息'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('App shows agreement dialog on first launch', (tester) async {
     SharedPreferences.setMockInitialValues({});
 

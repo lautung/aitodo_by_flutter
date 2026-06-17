@@ -5,6 +5,7 @@ import '../providers/ai_mode_provider.dart';
 import '../providers/task_provider.dart';
 import '../services/ai_dispatcher_service.dart';
 import '../services/chat_storage_service.dart';
+import '../widgets/ui/ui.dart';
 
 /// 聊天消息模型（用于UI）
 class ChatMessage {
@@ -296,115 +297,59 @@ class _AIChatScreenState extends State<AIChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.smart_toy, size: 24),
-            SizedBox(width: 8),
-            Text('AI助手'),
-          ],
+    return AppPageScaffold(
+      title: 'AI助手',
+      subtitle: '用自然语言创建、查询和整理任务',
+      leadingIcon: Icons.smart_toy_outlined,
+      actions: [
+        IconButton.filledTonal(
+          icon: const Icon(Icons.refresh),
+          tooltip: '清空聊天',
+          onPressed: () async {
+            final confirmed = await showAppConfirmDialog(
+              context: context,
+              title: '清空聊天',
+              message: '确定要清空所有聊天记录吗？',
+              confirmLabel: '清空',
+              destructive: true,
+            );
+            if (confirmed == true) _clearChat();
+          },
         ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: '清空聊天',
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (dialogContext) => AlertDialog(
-                  title: const Text('清空聊天'),
-                  content: const Text('确定要清空所有聊天记录吗？'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(dialogContext),
-                      child: const Text('取消'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(dialogContext);
-                        _clearChat();
-                      },
-                      child: const Text('确定'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: _isLoading
+      ],
+      child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Chat messages
                 Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final message = _messages[index];
-                      return _buildMessageBubble(message);
-                    },
-                  ),
-                ),
-                // Input area
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withValues(alpha: 0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
-                  ),
-                  child: SafeArea(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _inputController,
-                            decoration: InputDecoration(
-                              hintText: '输入任务描述...',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                            ),
-                            textInputAction: TextInputAction.send,
-                            onSubmitted: (_) => _sendMessage(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        CircleAvatar(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.send,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            onPressed: _isProcessing ? null : _sendMessage,
-                          ),
-                        ),
-                      ],
+                  child: AppSurface(
+                    padding: EdgeInsets.zero,
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        final message = _messages[index];
+                        return _buildMessageBubble(message);
+                      },
                     ),
                   ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                if (_isProcessing) ...[
+                  const LinearProgressIndicator(minHeight: 2),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+                AppCommandField(
+                  controller: _inputController,
+                  hintText: '输入任务描述...',
+                  leadingIcon: Icons.auto_awesome,
+                  actionIcon: Icons.send,
+                  actionTooltip: '发送',
+                  actionEnabled: !_isProcessing,
+                  onSubmitted: (_) => _sendMessage(),
+                  onActionPressed: _sendMessage,
+                  onClear: _inputController.clear,
                 ),
               ],
             ),
@@ -412,8 +357,16 @@ class _AIChatScreenState extends State<AIChatScreen> {
   }
 
   Widget _buildMessageBubble(ChatMessage message) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final bubbleColor = message.isUser
+        ? colorScheme.primary
+        : colorScheme.surfaceContainerHighest.withValues(alpha: 0.55);
+    final foreground = message.isUser
+        ? colorScheme.onPrimary
+        : colorScheme.onSurface;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
         mainAxisAlignment: message.isUser
             ? MainAxisAlignment.end
@@ -421,16 +374,20 @@ class _AIChatScreenState extends State<AIChatScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!message.isUser) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.blue.shade100,
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadii.sm),
+              ),
               child: Icon(
-                Icons.smart_toy,
+                Icons.smart_toy_outlined,
                 size: 18,
-                color: Colors.blue.shade700,
+                color: colorScheme.primary,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
           ],
           Flexible(
             child: Column(
@@ -440,14 +397,12 @@ class _AIChatScreenState extends State<AIChatScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
                   ),
                   decoration: BoxDecoration(
-                    color: message.isUser
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(16).copyWith(
+                    color: bubbleColor,
+                    borderRadius: BorderRadius.circular(AppRadii.md).copyWith(
                       bottomRight: message.isUser
                           ? const Radius.circular(4)
                           : null,
@@ -458,16 +413,16 @@ class _AIChatScreenState extends State<AIChatScreen> {
                   ),
                   child: Text(
                     message.content,
-                    style: TextStyle(
-                      color: message.isUser ? Colors.white : Colors.black87,
-                      fontSize: 14,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: foreground,
+                      height: 1.45,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          if (message.isUser) const SizedBox(width: 8),
+          if (message.isUser) const SizedBox(width: AppSpacing.sm),
         ],
       ),
     );

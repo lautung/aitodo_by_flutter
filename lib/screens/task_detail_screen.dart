@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../models/task.dart';
 import '../models/subtask.dart';
 import '../providers/task_provider.dart';
+import '../widgets/ui/ui.dart';
 import 'task_form_screen.dart';
 
 class TaskDetailScreen extends StatefulWidget {
@@ -125,27 +126,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('yyyy-MM-dd');
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('任务详情'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(icon: const Icon(Icons.share), onPressed: _shareTask),
-          IconButton(icon: const Icon(Icons.edit), onPressed: _navigateToEdit),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+    return AppPageScaffold(
+      title: '任务详情',
+      subtitle: '${_task.priority.label} · ${_task.category.label}',
+      leadingIcon: _task.category.icon,
+      actions: [
+        IconButton.filledTonal(
+          icon: const Icon(Icons.share_outlined),
+          tooltip: '分享',
+          onPressed: _shareTask,
+        ),
+        IconButton.filledTonal(
+          icon: const Icon(Icons.edit_outlined),
+          tooltip: '编辑',
+          onPressed: _navigateToEdit,
+        ),
+      ],
+      child: SingleChildScrollView(
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 任务标题和状态
-            Card(
+            AppSurface(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.zero,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -184,7 +189,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           child: Text(
                             _task.title,
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               decoration: _task.isCompleted
                                   ? TextDecoration.lineThrough
@@ -201,7 +206,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         padding: const EdgeInsets.only(left: 48),
                         child: Text(
                           _task.description!,
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
                         ),
                       ),
                     ],
@@ -212,9 +222,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             const SizedBox(height: 16),
 
             // 任务信息
-            Card(
+            AppSurface(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.zero,
                 child: Column(
                   children: [
                     _buildInfoRow(
@@ -257,19 +267,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             const SizedBox(height: 24),
 
             // 子任务列表
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  '子任务',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                if (_task.subtasks.isNotEmpty)
-                  Text(
-                    '${_task.subtasks.where((s) => s.isCompleted).length}/${_task.subtasks.length}',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-              ],
+            AppSectionHeader(
+              title: '子任务',
+              count: _task.subtasks.isEmpty ? null : _task.subtasks.length,
+              subtitle: _task.subtasks.isEmpty
+                  ? null
+                  : '${_task.subtasks.where((s) => s.isCompleted).length} 已完成',
             ),
             const SizedBox(height: 8),
 
@@ -319,16 +322,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
             // 子任务列表
             if (_task.subtasks.isEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      Icon(Icons.checklist, size: 48, color: Colors.grey[300]),
-                      const SizedBox(height: 8),
-                      Text('暂无子任务', style: TextStyle(color: Colors.grey[500])),
-                    ],
-                  ),
+              const AppSurface(
+                child: AppEmptyState(
+                  icon: Icons.checklist,
+                  title: '暂无子任务',
+                  message: '把复杂任务拆小后，可以在这里逐项完成。',
                 ),
               )
             else
@@ -433,71 +431,41 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         .where((t) => t.id != _task.id && !_task.prerequisiteIds.contains(t.id))
         .toList();
 
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.5,
-          minChildSize: 0.3,
-          maxChildSize: 0.8,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    '选择前置任务',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Expanded(
-                  child: availableTasks.isEmpty
-                      ? Center(
-                          child: Text(
-                            '没有可用的任务',
-                            style: TextStyle(color: Colors.grey[500]),
-                          ),
-                        )
-                      : ListView.builder(
-                          controller: scrollController,
-                          itemCount: availableTasks.length,
-                          itemBuilder: (context, index) {
-                            final task = availableTasks[index];
-                            return ListTile(
-                              leading: Icon(
-                                task.isCompleted
-                                    ? Icons.check_circle
-                                    : Icons.pending,
-                                color: task.isCompleted
-                                    ? Colors.green
-                                    : Colors.orange,
-                              ),
-                              title: Text(task.title),
-                              subtitle: task.description != null
-                                  ? Text(
-                                      task.description!,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    )
-                                  : null,
-                              onTap: () {
-                                _addPrerequisite(task.id);
-                                Navigator.pop(context);
-                              },
-                            );
-                          },
-                        ),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      title: '选择前置任务',
+      subtitle: '完成这些任务后才能完成当前任务',
+      child: availableTasks.isEmpty
+          ? const AppEmptyState(
+              icon: Icons.link_off,
+              title: '没有可用的任务',
+              message: '可选择的前置任务会显示在这里。',
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
+              itemCount: availableTasks.length,
+              separatorBuilder: (context, index) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final task = availableTasks[index];
+                return AppListItem(
+                  icon: task.isCompleted
+                      ? Icons.check_circle_outline
+                      : Icons.pending_outlined,
+                  iconColor: task.isCompleted ? Colors.green : Colors.orange,
+                  title: task.title,
+                  subtitle: task.description,
+                  onTap: () {
+                    _addPrerequisite(task.id);
+                    Navigator.pop(context);
+                  },
+                );
+              },
+            ),
     );
   }
 
@@ -531,25 +499,29 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       onDismissed: (_) => _deleteSubtask(subtask.id),
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 8),
-        child: ListTile(
-          leading: Checkbox(
-            value: subtask.isCompleted,
-            onChanged: (_) => _toggleSubtask(subtask.id),
-          ),
-          title: Text(
-            subtask.title,
-            style: TextStyle(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: AppSurface(
+          padding: EdgeInsets.zero,
+          child: AppListItem(
+            leading: Checkbox(
+              value: subtask.isCompleted,
+              onChanged: (_) => _toggleSubtask(subtask.id),
+            ),
+            title: subtask.title,
+            titleStyle: TextStyle(
               decoration: subtask.isCompleted
                   ? TextDecoration.lineThrough
                   : null,
-              color: subtask.isCompleted ? Colors.grey : null,
+              color: subtask.isCompleted
+                  ? Theme.of(context).colorScheme.onSurfaceVariant
+                  : null,
+              fontWeight: FontWeight.w700,
             ),
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete_outline, size: 20),
-            onPressed: () => _deleteSubtask(subtask.id),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              onPressed: () => _deleteSubtask(subtask.id),
+            ),
           ),
         ),
       ),
