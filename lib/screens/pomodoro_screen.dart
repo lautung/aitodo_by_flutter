@@ -1,262 +1,170 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/pomodoro_provider.dart';
+import '../widgets/ui/ui.dart';
 
 class PomodoroScreen extends StatelessWidget {
   const PomodoroScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('番茄钟'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
-        child: Consumer<PomodoroProvider>(
-          builder: (context, provider, child) {
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final isCompactHeight = constraints.maxHeight < 640;
-                final isVeryCompactHeight = constraints.maxHeight < 500;
-                final timerSize = isVeryCompactHeight
-                    ? 200.0
-                    : isCompactHeight
-                    ? 220.0
-                    : 250.0;
-                final sectionGap = isVeryCompactHeight
-                    ? 18.0
-                    : isCompactHeight
-                    ? 24.0
-                    : 40.0;
-                final verticalPadding = isCompactHeight ? 16.0 : 24.0;
-                final minContentHeight =
-                    constraints.maxHeight - (verticalPadding * 2);
+    return Consumer<PomodoroProvider>(
+      builder: (context, provider, child) {
+        return AppPageScaffold(
+          title: '番茄钟',
+          subtitle: _subtitleForState(provider.state),
+          leadingIcon: Icons.timer_outlined,
+          scrollable: false,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompactHeight = constraints.maxHeight < 560;
+              final timerSize = isCompactHeight ? 210.0 : 250.0;
 
-                return SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    32,
-                    verticalPadding,
-                    32,
-                    verticalPadding,
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    children: [
+                      AppSurface(
+                        padding: EdgeInsets.all(isCompactHeight ? 18 : 24),
+                        child: Column(
+                          children: [
+                            _StatePill(provider: provider),
+                            SizedBox(height: isCompactHeight ? 18 : 28),
+                            _TimerDial(provider: provider, size: timerSize),
+                            SizedBox(height: isCompactHeight ? 18 : 28),
+                            _PomodoroControls(provider: provider),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      AppMetricGrid(
+                        children: [
+                          AppMetricCard(
+                            label: '今日完成',
+                            value: '${provider.completedPomodoros}',
+                            helper: '专注轮次',
+                            icon: Icons.check_circle_outline,
+                            color: Colors.teal,
+                          ),
+                          AppMetricCard(
+                            label: '工作时长',
+                            value: '${provider.completedPomodoros * 25} 分钟',
+                            helper: '按标准番茄钟估算',
+                            icon: Icons.schedule,
+                            color: Colors.indigo,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: minContentHeight > 0 ? minContentHeight : 0,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // 状态显示
-                        _buildStateIndicator(provider),
-                        SizedBox(height: sectionGap),
-
-                        // 计时器
-                        _buildTimer(context, provider, timerSize),
-                        SizedBox(height: sectionGap),
-
-                        // 控制按钮
-                        _buildControls(context, provider),
-                        SizedBox(height: sectionGap),
-
-                        // 统计
-                        _buildStats(provider),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStateIndicator(PomodoroProvider provider) {
-    String stateText;
-    Color stateColor;
-
-    switch (provider.state) {
-      case PomodoroState.idle:
-        stateText = '准备开始';
-        stateColor = Colors.grey;
-        break;
-      case PomodoroState.working:
-        stateText = '工作中';
-        stateColor = Colors.red;
-        break;
-      case PomodoroState.shortBreak:
-        stateText = '短休息';
-        stateColor = Colors.green;
-        break;
-      case PomodoroState.longBreak:
-        stateText = '长休息';
-        stateColor = Colors.blue;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      decoration: BoxDecoration(
-        color: stateColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        stateText,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: stateColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimer(
-    BuildContext context,
-    PomodoroProvider provider,
-    double size,
-  ) {
-    final timeFontSize = size < 220 ? 40.0 : 48.0;
-
-    return SizedBox.square(
-      dimension: size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // 进度圆环
-          SizedBox.square(
-            dimension: size,
-            child: CircularProgressIndicator(
-              value: provider.progress,
-              strokeWidth: 12,
-              backgroundColor: Colors.grey[200],
-              valueColor: AlwaysStoppedAnimation<Color>(
-                _getColorForState(provider.state),
-              ),
-            ),
-          ),
-          // 时间显示
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                provider.timeDisplay,
-                style: TextStyle(
-                  fontSize: timeFontSize,
-                  fontWeight: FontWeight.bold,
                 ),
-              ),
-              Text(
-                '番茄数: ${provider.completedPomodoros}',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-            ],
+              );
+            },
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Color _getColorForState(PomodoroState state) {
+  static String _subtitleForState(PomodoroState state) {
     switch (state) {
       case PomodoroState.idle:
-        return Colors.grey;
+        return '准备一次安静的专注';
+      case PomodoroState.working:
+        return '保持节奏，先完成眼前这一段';
+      case PomodoroState.shortBreak:
+        return '短休息，给大脑一点空间';
+      case PomodoroState.longBreak:
+        return '长休息，恢复后再继续';
+    }
+  }
+}
+
+class _StatePill extends StatelessWidget {
+  final PomodoroProvider provider;
+
+  const _StatePill({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _stateColor(provider.state);
+    return AppInfoPill(
+      label: _stateLabel(provider.state),
+      color: color,
+      icon: provider.isRunning ? Icons.bolt : Icons.radio_button_checked,
+      emphasized: true,
+    );
+  }
+
+  static String _stateLabel(PomodoroState state) {
+    switch (state) {
+      case PomodoroState.idle:
+        return '准备开始';
+      case PomodoroState.working:
+        return '工作中';
+      case PomodoroState.shortBreak:
+        return '短休息';
+      case PomodoroState.longBreak:
+        return '长休息';
+    }
+  }
+
+  static Color _stateColor(PomodoroState state) {
+    switch (state) {
+      case PomodoroState.idle:
+        return Colors.blueGrey;
       case PomodoroState.working:
         return Colors.red;
       case PomodoroState.shortBreak:
         return Colors.green;
       case PomodoroState.longBreak:
-        return Colors.blue;
+        return Colors.indigo;
     }
   }
+}
 
-  Widget _buildControls(BuildContext context, PomodoroProvider provider) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // 重置按钮
-        IconButton.filled(
-          onPressed: () => unawaited(provider.reset()),
-          icon: const Icon(Icons.refresh),
-          style: IconButton.styleFrom(
-            backgroundColor: Colors.grey[300],
-            foregroundColor: Colors.black87,
-          ),
+class _TimerDial extends StatelessWidget {
+  final PomodoroProvider provider;
+  final double size;
+
+  const _TimerDial({required this.provider, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = _StatePill._stateColor(provider.state);
+    final timeFontSize = size < 230 ? 40.0 : 48.0;
+
+    return SizedBox.square(
+      dimension: size,
+      child: CustomPaint(
+        painter: _TimerDialPainter(
+          progress: provider.progress,
+          color: color,
+          trackColor: colorScheme.surfaceContainerHighest,
         ),
-        const SizedBox(width: 20),
-
-        // 主按钮
-        if (provider.state == PomodoroState.idle)
-          ElevatedButton.icon(
-            onPressed: () => unawaited(provider.startWork()),
-            icon: const Icon(Icons.play_arrow),
-            label: const Text('开始工作'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            ),
-          )
-        else if (provider.isRunning)
-          ElevatedButton.icon(
-            onPressed: () => unawaited(provider.pause()),
-            icon: const Icon(Icons.pause),
-            label: const Text('暂停'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            ),
-          )
-        else
-          ElevatedButton.icon(
-            onPressed: () => unawaited(provider.resume()),
-            icon: const Icon(Icons.play_arrow),
-            label: const Text('继续'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            ),
-          ),
-
-        const SizedBox(width: 20),
-
-        // 跳过按钮
-        IconButton.filled(
-          onPressed: () => unawaited(provider.skip()),
-          icon: const Icon(Icons.skip_next),
-          style: IconButton.styleFrom(
-            backgroundColor: Colors.grey[300],
-            foregroundColor: Colors.black87,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStats(PomodoroProvider provider) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(
-              child: _buildStatItem(
-                '今日完成',
-                '${provider.completedPomodoros}',
-                Icons.check_circle,
+            Text(
+              provider.timeDisplay,
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                fontSize: timeFontSize,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0,
               ),
             ),
-            Expanded(
-              child: _buildStatItem(
-                '工作时长',
-                '${provider.completedPomodoros * 25}分钟',
-                Icons.timer,
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              '番茄数: ${provider.completedPomodoros}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -264,23 +172,113 @@ class PomodoroScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildStatItem(String label, String value, IconData icon) {
-    return Column(
+class _PomodoroControls extends StatelessWidget {
+  final PomodoroProvider provider;
+
+  const _PomodoroControls({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryAction = provider.state == PomodoroState.idle
+        ? _ControlAction(
+            label: '开始工作',
+            icon: Icons.play_arrow,
+            onPressed: () => unawaited(provider.startWork()),
+          )
+        : provider.isRunning
+        ? _ControlAction(
+            label: '暂停',
+            icon: Icons.pause,
+            onPressed: () => unawaited(provider.pause()),
+          )
+        : _ControlAction(
+            label: '继续',
+            icon: Icons.play_arrow,
+            onPressed: () => unawaited(provider.resume()),
+          );
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: Colors.grey[600]),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        IconButton.filledTonal(
+          tooltip: '重置',
+          onPressed: () => unawaited(provider.reset()),
+          icon: const Icon(Icons.refresh),
         ),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        const SizedBox(width: AppSpacing.md),
+        FilledButton.icon(
+          onPressed: primaryAction.onPressed,
+          icon: Icon(primaryAction.icon),
+          label: Text(primaryAction.label),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        IconButton.filledTonal(
+          tooltip: '跳过',
+          onPressed: () => unawaited(provider.skip()),
+          icon: const Icon(Icons.skip_next),
         ),
       ],
     );
+  }
+}
+
+class _ControlAction {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _ControlAction({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+}
+
+class _TimerDialPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final Color trackColor;
+
+  const _TimerDialPainter({
+    required this.progress,
+    required this.color,
+    required this.trackColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.shortestSide - 14) / 2;
+    final trackPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12
+      ..strokeCap = StrokeCap.round
+      ..color = trackColor;
+    final progressPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12
+      ..strokeCap = StrokeCap.round
+      ..color = color;
+
+    canvas.drawCircle(center, radius, trackPaint);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      math.pi * 2 * progress.clamp(0, 1),
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _TimerDialPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.color != color ||
+        oldDelegate.trackColor != trackColor;
   }
 }

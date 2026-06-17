@@ -46,56 +46,107 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
+          ThemeData buildTheme(Brightness brightness) {
+            final colorScheme = ColorScheme.fromSeed(
+              seedColor: themeProvider.seedColor,
+              brightness: brightness,
+            );
+            final isDark = brightness == Brightness.dark;
+
+            return ThemeData(
+              colorScheme: colorScheme,
+              useMaterial3: true,
+              scaffoldBackgroundColor: colorScheme.surface,
+              appBarTheme: AppBarTheme(
+                centerTitle: false,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                backgroundColor: colorScheme.surface,
+                foregroundColor: colorScheme.onSurface,
+                titleTextStyle: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              cardTheme: CardThemeData(
+                elevation: 0,
+                color: colorScheme.surfaceContainerLowest,
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(color: colorScheme.outlineVariant),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              dialogTheme: DialogThemeData(
+                backgroundColor: colorScheme.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              bottomSheetTheme: BottomSheetThemeData(
+                backgroundColor: colorScheme.surface,
+                modalBackgroundColor: colorScheme.surface,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+              ),
+              navigationBarTheme: NavigationBarThemeData(
+                height: 72,
+                elevation: 0,
+                backgroundColor: colorScheme.surface,
+                indicatorColor: colorScheme.primaryContainer.withValues(
+                  alpha: isDark ? 0.35 : 0.55,
+                ),
+                labelTextStyle: WidgetStateProperty.resolveWith(
+                  (states) => TextStyle(
+                    fontSize: 12,
+                    fontWeight: states.contains(WidgetState.selected)
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                  ),
+                ),
+              ),
+              tabBarTheme: TabBarThemeData(
+                dividerColor: Colors.transparent,
+                indicatorSize: TabBarIndicatorSize.tab,
+                labelColor: colorScheme.primary,
+                unselectedLabelColor: colorScheme.onSurfaceVariant,
+                labelStyle: const TextStyle(fontWeight: FontWeight.w800),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              snackBarTheme: SnackBarThemeData(
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: colorScheme.surfaceContainerLowest,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: colorScheme.outlineVariant),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+            );
+          }
+
           return MaterialApp(
             title: 'AiTODO',
             debugShowCheckedModeBanner: false,
             themeMode: themeProvider.themeMode,
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: themeProvider.seedColor,
-                brightness: Brightness.light,
-              ),
-              useMaterial3: true,
-              appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-              cardTheme: CardThemeData(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              inputDecorationTheme: InputDecorationTheme(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-            ),
-            darkTheme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: themeProvider.seedColor,
-                brightness: Brightness.dark,
-              ),
-              useMaterial3: true,
-              appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-              cardTheme: CardThemeData(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              inputDecorationTheme: InputDecorationTheme(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-            ),
+            theme: buildTheme(Brightness.light),
+            darkTheme: buildTheme(Brightness.dark),
             home: const ComplianceGate(child: HomeScreen()),
           );
         },

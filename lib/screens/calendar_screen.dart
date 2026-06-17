@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../providers/task_provider.dart';
 import '../widgets/heatmap_calendar.dart';
 import '../services/lunar_service.dart';
+import '../widgets/ui/ui.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -37,38 +38,47 @@ class _CalendarScreenState extends State<CalendarScreen>
         final now = DateTime.now();
         final monthlyData = provider.getTasksByMonth(now.year, now.month);
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('日历'),
-            centerTitle: true,
-            elevation: 0,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            foregroundColor: Colors.white,
-            bottom: TabBar(
-              controller: _tabController,
-              indicatorColor: Colors.white,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              isScrollable: true,
-              tabs: const [
-                Tab(text: '年'),
-                Tab(text: '月'),
-                Tab(text: '周'),
-                Tab(text: '日'),
-              ],
-            ),
-          ),
-          body: TabBarView(
-            controller: _tabController,
+        return AppPageScaffold(
+          title: '日历',
+          subtitle: DateFormat('yyyy年M月d日').format(now),
+          leadingIcon: Icons.calendar_today_outlined,
+          child: Column(
             children: [
-              // 年视图
-              _buildYearView(provider, heatmapData, now),
-              // 月视图
-              _buildMonthlyView(provider, monthlyData, now.year, now.month),
-              // 周视图
-              _buildWeekView(provider, heatmapData, now),
-              // 日视图
-              _buildDayView(provider, heatmapData, now, provider),
+              AppSurface(
+                padding: const EdgeInsets.all(AppSpacing.xs),
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
+                  ),
+                  tabs: const [
+                    Tab(text: '年'),
+                    Tab(text: '月'),
+                    Tab(text: '周'),
+                    Tab(text: '日'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildYearView(provider, heatmapData, now),
+                    _buildMonthlyView(
+                      provider,
+                      monthlyData,
+                      now.year,
+                      now.month,
+                    ),
+                    _buildWeekView(provider, heatmapData, now),
+                    _buildDayView(provider, heatmapData, now, provider),
+                  ],
+                ),
+              ),
             ],
           ),
         );
@@ -90,13 +100,9 @@ class _CalendarScreenState extends State<CalendarScreen>
           _buildStatsCard(provider),
           const SizedBox(height: 24),
           // 年度热力图
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+          AppSurface(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.zero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -124,13 +130,9 @@ class _CalendarScreenState extends State<CalendarScreen>
           ),
           const SizedBox(height: 24),
           // 年日历视图
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+          AppSurface(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.zero,
               child: YearCalendar(
                 year: now.year,
                 data: heatmapData,
@@ -158,13 +160,9 @@ class _CalendarScreenState extends State<CalendarScreen>
       child: Column(
         children: [
           // 月历卡片
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+          AppSurface(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.zero,
               child: MonthlyCalendar(
                 year: year,
                 month: month,
@@ -188,11 +186,9 @@ class _CalendarScreenState extends State<CalendarScreen>
     final lunarInfo = _lunarService.getLunarInfo(now);
     final huangliInfo = _lunarService.getHuangliInfo(now);
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return AppSurface(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -349,13 +345,9 @@ class _CalendarScreenState extends State<CalendarScreen>
       child: Column(
         children: [
           // 周日历视图
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+          AppSurface(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.zero,
               child: WeekCalendar(
                 initialDate: now,
                 data: heatmapData,
@@ -387,11 +379,9 @@ class _CalendarScreenState extends State<CalendarScreen>
       completedTasks += count;
     }
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return AppSurface(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.zero,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -461,11 +451,9 @@ class _CalendarScreenState extends State<CalendarScreen>
         )
         .length;
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return AppSurface(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.zero,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -523,176 +511,77 @@ class _CalendarScreenState extends State<CalendarScreen>
   ) {
     final tasks = provider.getTasksCompletedOn(date);
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        minChildSize: 0.3,
-        maxChildSize: 0.8,
-        expand: false,
-        builder: (context, scrollController) {
-          // 获取当天的所有任务（不仅是完成的）
-          final allDayTasks = provider.allTasks.where((task) {
-            final taskDate = task.dueDate;
-            if (taskDate == null) return false;
-            return taskDate.year == date.year &&
-                taskDate.month == date.month &&
-                taskDate.day == date.day;
-          }).toList();
+    final allDayTasks = provider.allTasks.where((task) {
+      final taskDate = task.dueDate;
+      if (taskDate == null) return false;
+      return taskDate.year == date.year &&
+          taskDate.month == date.month &&
+          taskDate.day == date.day;
+    }).toList();
+    final lunarInfo = _lunarService.getLunarInfo(date);
 
-          return Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    showAppBottomSheet(
+      context: context,
+      title: DateFormat('yyyy-MM-dd').format(date),
+      subtitle: '农历: ${lunarInfo.monthName}${lunarInfo.dayName}',
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Row(
               children: [
-                // 头部
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.check_circle,
-                        color: Colors.green.shade700,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            DateFormat('yyyy-MM-dd').format(date),
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          // 显示农历信息
-                          Builder(
-                            builder: (context) {
-                              final lunarInfo = _lunarService.getLunarInfo(
-                                date,
-                              );
-                              return Text(
-                                '农历: ${lunarInfo.monthName}${lunarInfo.dayName}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
+                _buildTaskStatChip(
+                  '已完成',
+                  tasks.length.toString(),
+                  Colors.green,
                 ),
-                const SizedBox(height: 16),
-                // 任务统计
-                Row(
-                  children: [
-                    _buildTaskStatChip(
-                      '已完成',
-                      tasks.length.toString(),
-                      Colors.green,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildTaskStatChip(
-                      '待完成',
-                      (allDayTasks.length - tasks.length).toString(),
-                      Colors.orange,
-                    ),
-                  ],
-                ),
-                const Divider(height: 24),
-                // 任务列表
-                Expanded(
-                  child: allDayTasks.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.inbox_outlined,
-                                size: 48,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '暂无任务',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          controller: scrollController,
-                          itemCount: allDayTasks.length,
-                          itemBuilder: (context, index) {
-                            final task = allDayTasks[index];
-                            return ListTile(
-                              leading: Icon(
-                                task.isCompleted
-                                    ? Icons.check_circle
-                                    : Icons.circle_outlined,
-                                color: task.isCompleted
-                                    ? Colors.green
-                                    : Colors.grey,
-                              ),
-                              title: Text(
-                                task.title,
-                                style: TextStyle(
-                                  decoration: task.isCompleted
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                                ),
-                              ),
-                              subtitle: task.description != null
-                                  ? Text(
-                                      task.description!,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    )
-                                  : null,
-                              trailing: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: task.category.color.withValues(
-                                    alpha: 0.1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  task.category.label,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: task.category.color,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
+                const SizedBox(width: AppSpacing.sm),
+                _buildTaskStatChip(
+                  '待完成',
+                  (allDayTasks.length - tasks.length).toString(),
+                  Colors.orange,
                 ),
               ],
             ),
-          );
-        },
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Expanded(
+            child: allDayTasks.isEmpty
+                ? const AppEmptyState(
+                    icon: Icons.inbox_outlined,
+                    title: '暂无任务',
+                    message: '当天有截止日期的任务会在这里显示。',
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      0,
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                    ),
+                    itemCount: allDayTasks.length,
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final task = allDayTasks[index];
+                      return AppListItem(
+                        icon: task.isCompleted
+                            ? Icons.check_circle_outline
+                            : Icons.circle_outlined,
+                        iconColor: task.isCompleted
+                            ? Colors.green
+                            : Theme.of(context).colorScheme.outline,
+                        title: task.title,
+                        subtitle: task.description,
+                        trailing: AppInfoPill(
+                          label: task.category.label,
+                          color: task.category.color,
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

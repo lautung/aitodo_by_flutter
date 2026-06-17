@@ -10,6 +10,7 @@ class AppSpacing {
   static const double lg = 16;
   static const double xl = 20;
   static const double xxl = 24;
+  static const double xxxl = 32;
 }
 
 class AppRadii {
@@ -27,6 +28,7 @@ class AppBreakpoints {
 
   static const double compactMaxWidth = 560;
   static const double contentMaxWidth = 720;
+  static const double wideContentMaxWidth = 960;
 }
 
 class AppInsets {
@@ -37,4 +39,12 @@ class AppInsets {
     vertical: AppSpacing.md,
   );
   static const EdgeInsets surface = EdgeInsets.all(AppSpacing.lg);
+  static const EdgeInsets compactSurface = EdgeInsets.all(AppSpacing.md);
+}
+
+class AppDurations {
+  const AppDurations._();
+
+  static const Duration fast = Duration(milliseconds: 160);
+  static const Duration normal = Duration(milliseconds: 240);
 }

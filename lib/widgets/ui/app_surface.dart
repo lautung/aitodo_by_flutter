@@ -18,7 +18,7 @@ class AppSurface extends StatelessWidget {
     this.margin,
     this.color,
     this.borderColor,
-    this.radius = AppRadii.md,
+    this.radius = AppRadii.sm,
     this.onTap,
   });
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/ui/ui.dart';
+
 enum LegalDocumentType { privacyPolicy, userAgreement, permissions, aiNotice }
 
 class LegalDocumentScreen extends StatelessWidget {
@@ -55,35 +57,65 @@ class LegalDocumentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_title),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Text(
-            _title,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          ..._paragraphs.map(
-            (paragraph) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                paragraph,
-                style: const TextStyle(fontSize: 15, height: 1.6),
-              ),
-            ),
-          ),
-        ],
+    return AppPageScaffold(
+      title: _title,
+      subtitle: '本地优先、清晰授权、按需开启',
+      leadingIcon: _icon,
+      maxWidth: 680,
+      child: AppSurface(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: ListView.separated(
+          itemCount: _paragraphs.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 14),
+          itemBuilder: (context, index) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadii.xs),
+                  ),
+                  child: Text(
+                    '${index + 1}',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    _paragraphs[index],
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(height: 1.65),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
+  }
+
+  IconData get _icon {
+    switch (type) {
+      case LegalDocumentType.privacyPolicy:
+        return Icons.privacy_tip_outlined;
+      case LegalDocumentType.userAgreement:
+        return Icons.description_outlined;
+      case LegalDocumentType.permissions:
+        return Icons.security_outlined;
+      case LegalDocumentType.aiNotice:
+        return Icons.auto_awesome_outlined;
+    }
   }
 }
